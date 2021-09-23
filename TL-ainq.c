@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
 	struct sockaddr_in server, client;
 	char *message;
 
-	printf("Begin Socket Creation\n");
+	printf("=============================Begin Socket Creation================================\n");
 
 	//create socket
 	socket_desc = socket(AF_INET, SOCK_STREAM, 0);
@@ -51,10 +51,10 @@ int main(int argc, char *argv[])
 	{
 		puts("connection accepted");
 		//Reply to client
-		message = "Hello team member, I see you are online now\n";
+		message = "WELCOME TEAM MEMBER\n";
 		write(new_socket, message, strlen(message));
 
-		message = "Assigning you to a handler\n";
+		message = "===================== Assigning you a Thread ======================\n";
 		write(new_socket, message, strlen(message));
 
 		//initiating threads
@@ -90,10 +90,7 @@ void *connection_handler(void *socket_desc)
 	char *server_message, client_message[2000];
 
 	//send message to client
-	server_message = "Greetings! This is your handler\n";
-	write(sock, server_message, strlen(server_message));
-
-	server_message = "Type something\n";
+	server_message = "================== INITIALIZING COMMUNICATION =======================\n";
 	write(sock, server_message, strlen(server_message));
 
 	//receive message from client
