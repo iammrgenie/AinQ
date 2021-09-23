@@ -87,14 +87,14 @@ void *connection_handler(void *socket_desc)
 	//sock descriptor
 	int sock = *(int*)socket_desc;
 	int read_size;
-	char server_message[2000], client_message[2000];
+	char *server_message, client_message[2000];
 
 	//send message to client
 	server_message = "Greetings! This is your handler\n";
-	write(sock, server_message, strlen(message));
+	write(sock, server_message, strlen(server_message));
 
 	server_message = "Type something\n";
-	write(sock, server_message, strlen(message));
+	write(sock, server_message, strlen(server_message));
 
 	//receive message from client
 	/*

@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 	puts("socket done");
 
 	//initialize connection parameters
-	server.sin_addr.s_addr = inet_addr("192.168.1.1");
+	server.sin_addr.s_addr = inet_addr("192.168.50.54");
 	server.sin_family = AF_INET;
 	server.sin_port = htons(1235);
 
