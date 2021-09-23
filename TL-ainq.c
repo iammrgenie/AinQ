@@ -87,16 +87,17 @@ void *connection_handler(void *socket_desc)
 	//sock descriptor
 	int sock = *(int*)socket_desc;
 	int read_size;
-	char *message, client_message[2000];
+	char server_message[2000], client_message[2000];
 
 	//send message to client
-	message = "Greetings! This is your handler\n";
-	write(sock, message, strlen(message));
+	server_message = "Greetings! This is your handler\n";
+	write(sock, server_message, strlen(message));
 
-	message = "Type something\n";
-	write(sock, message, strlen(message));
+	server_message = "Type something\n";
+	write(sock, server_message, strlen(message));
 
 	//receive message from client
+	/*
 	while ((read_size = recv(sock, client_message, 2000, 0)) > 0){
 		//repeat message back to client
 		write(sock, client_message, strlen(client_message));
@@ -108,6 +109,22 @@ void *connection_handler(void *socket_desc)
 	}
 	else if(read_size == -1){
 		perror("recv failed");
+	}
+	*/
+
+	for (;;) {
+		bzero(client_message, 2000);
+		read(sock, client_message, 2000);
+
+		printf("Message from Client: %s\n", client_message);
+		server_message = "Well received\n";
+		write(sock, server_message, 2000);
+
+		if(strncmp("exit", client_message, 4) == 0) {
+			printf("Client Exited\n");
+			break;
+		}
+
 	}
 
 	//release socket
