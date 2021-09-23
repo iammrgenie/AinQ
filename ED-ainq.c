@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
 	struct sockaddr_in server;
 	char client_message[2000], server_reply[2000];
 
-	printf(" ======================== Begin Socket Creation =========================== \n");
+	printf("======================== Begin Socket Creation =========================== \n");
 
 	//create socket
 	socket_desc = socket(AF_INET, SOCK_STREAM, 0);
@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	printf(" ======================= Connected to Team Leader ======================== \n");
+	printf("======================= Connected to Team Leader ======================== \n");
 
 	recv(socket_desc, server_reply, 2000, 0);
 	puts(server_reply);
