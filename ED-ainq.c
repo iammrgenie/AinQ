@@ -42,6 +42,10 @@ int main(int argc, char *argv[])
 	puts(server_reply);
 	printf("\n");
 
+	recv(socket_desc, server_reply, 2000, 0);
+	puts(server_reply);
+	printf("\n");
+
 	for (;;) {
 		bzero(client_message, 2000);
 		printf("Enter message to the Server \n");
