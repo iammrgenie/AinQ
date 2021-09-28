@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
     unsigned long ran;
 	int socket_desc, new_connection;
 	struct sockaddr_in server;
-	char client_message[2000], server_reply[2000];
+	char client_message[200], server_reply[200];
 	char welcome[123];
 	char *Q, *p_x, *p_y;
 	BIG_256_56 p1, p2;
@@ -238,35 +238,64 @@ int main(int argc, char *argv[])
     for (i = 4; i < 100; i++) RAW.val[i] = i;
 
     CREATE_CSPRNG(&RNG, &RAW);  // initialise strong RNG
+	
+	/*
+    //Receive more miscellaenous messages
+	recv(socket_desc, server_reply, 93, 0);
+	puts(server_reply);
+	bzero(server_reply, 93);
+	*/
+
+	//Parameters for Requesting for Partial Key Parameters
+	char *ID = "A";
+	printf("Key Initialization Process\n");
+	
 
 	printf("\nGenerating Partial Secret Parameters\n\n");
 	printf("===============================================================================================================================\n");
-
-	//start = clock();
-	//======================================================================================================================================================
-
-    //======================================================================================================================================================
-
 	//Generate A's private and public keys
 	gen_secret_value(&RNG, &X_A, &P_A);
 
-	printf("A's Partial Private Key = ");
-    OCT_output(&X_A);
+	printf("%s's Partial Private Key = ", ID);
+	OCT_output(&X_A);
+	printf("\n");
+	printf("%s's Partial Public Key = ", ID);
+	OCT_output(&P_A);
     printf("\n");
-    printf("A's Partial Public Key = ");
-    OCT_output(&P_A);
-    printf("\n");
-    printf("===============================================================================================================================\n");
+    printf("===============================================================================================================================\n\n");
 
+	//Sending request paramters to the KGC/TL
+	write(socket_desc, ID, 1);
+	write(socket_desc, P_A.val, P_A.len);
+
+	/*
 	for (;;) {
-		bzero(client_message, 2000);
-		printf("Enter message to the Server \n");
+		printf("Welcome to Key Initialization Process\n");
+		printf("Enter the identity of the Client.\nEither 'A', 'B', 'C', or 'D'. Enter 'exit' to quit the process\n");
 		int n = 0;
-		while ((client_message[n++] = getchar()) != '\n')
+		while ((ID[n++] = getchar()) != '\n')
 			;
+
+		printf("\nGenerating Partial Secret Parameters\n\n");
+		printf("===============================================================================================================================\n");
+		//Generate A's private and public keys
+		gen_secret_value(&RNG, &X_A, &P_A);
+
+		printf("%c's Partial Private Key = ", ID[1]);
+	    OCT_output(&X_A);
+	    printf("\n");
+	    printf("%c's Partial Public Key = ", ID[1]);
+	    OCT_output(&P_A);
+	    printf("\n");
+	    printf("===============================================================================================================================\n\n");
+
+		//Sending request paramters to the KGC/TL
+		write(socket_desc, ID, 1);
+		write(socket_desc, P_A.val, P_A.len);
+
 		write(socket_desc, client_message, sizeof(client_message));
 		//receive response from the server
-		bzero(server_reply, 2000);
+		bzero(server_reply, 200);
 		read(socket_desc, server_reply, sizeof(server_reply));
 		printf("Response: %s\n", server_reply);
 		if (strncmp("exit", client_message, 4) == 0) {
@@ -274,8 +303,10 @@ int main(int argc, char *argv[])
 			break;
 		}
 	}
+	*/
 
 	close(socket_desc);
+
 	
 	return 0;
 }

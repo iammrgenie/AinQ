@@ -1,16 +1,24 @@
 //Standard headers
 #include <stdio.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>		//inet_addr
-#include <unistd.h>			//write and close
 #include <string.h>
-#include <pthread.h>		//for multi-threading
 #include <stdlib.h>
+#include <errno.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/time.h>           //FD_SET, FD_ISSET, FD_ZERO macros
 
 //Crypto headers
 #include <time.h>
 #include "ecdh_ED25519.h"
 #include "randapi.h"
+
+
+#define TRUE 1
+#define FALSE 0
+#define PORT 5555
 
 //ED25519 curve parameters
 BIG_256_56 q;
@@ -277,8 +285,10 @@ int gengroupkey(GL_user * GL, csprng *RNG, octet * P_PUB)
 }
 
 
+//Thread handling function for multi-threading
 void *connection_handler(void *);
 
+//Function display strings
 void displayString(char *sample, int len){
   	int i;
     unsigned char ch;
@@ -291,20 +301,21 @@ void displayString(char *sample, int len){
 }
 
 
+//Main Function for implmenting the main script
 int main(int argc, char *argv[])
 {
 	int i, res;
     unsigned long ran;
     char *server_message;
 
-    //socket parameters
-    int socket_desc, new_socket, c, *new_sock;
-	struct sockaddr_in server, client;
-	
+    //Socket Paramters
+    int opt = TRUE;
+    int master_socket, addrlen, new_socket, client_socket[30], max_clients = 30, activity, valread, sd, max_sd;
+    struct sockaddr_in address;
 
-	//timer parameters
-   	clock_t s1, s2, s3, s4, s5, s6, end;
-	double grp_key_time, sec_key_time;
+    char buffer[1025];  //data buffer
+
+    fd_set readfds;     //set of socket descriptor
 
     //Initiate curve parameters from the ROM
     ECP_ED25519_generator(&P);
@@ -359,16 +370,8 @@ int main(int argc, char *argv[])
 
     CREATE_CSPRNG(&RNG, &RAW);  // initialise strong RNG
 
-	//start = clock();
-	//======================================================================================================================================================
-
-    //======================================================================================================================================================
-
 	//Generate KGC private and public keys
-    s3 = clock();
-	gen_secret_value(&RNG, &X, &P_PUB);
-    s4 = clock();
-    sec_key_time = ((double) (s4 - s3)) / CLOCKS_PER_SEC; 
+	gen_secret_value(&RNG, &X, &P_PUB); 
 
 	printf("KGC's Private Key = ");
     OCT_output(&X);
@@ -376,127 +379,183 @@ int main(int argc, char *argv[])
     printf("KGC's Public Key = ");
     OCT_output(&P_PUB);
     printf("\n");
-     printf("======================================================================================================================\n\n");
+    printf("======================================================================================================================\n\n");
 
-	printf("============================================ Begin Socket Creation=====================================================\n");
-	//create socket
-	socket_desc = socket(AF_INET, SOCK_STREAM, 0);
+	printf("============================================ Begin Socket Creation ====================================================\n");
 
-	if (socket_desc == -1)
-	{
-		printf("Could not create socket\n");
-	}
+    //initialize all client sockets to 0
+    for (i = 0; i < max_clients; i++){
+        client_socket[i] = 0;
+    }
 
-	puts("socket done");
+    //Create the master socket
+    if ((master_socket = socket(AF_INET, SOCK_STREAM, 0)) == 0){
+        perror("Master socket creation failed");
+        exit(EXIT_FAILURE);
+    }
 
-	//initialize parameters
-	server.sin_addr.s_addr = INADDR_ANY;
-	server.sin_family = AF_INET;
-	server.sin_port = htons(5555);
+    //Allow master socket to allow multiple connections
+    if (setsockopt(master_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0){
+        perror("setsockopt");
+        exit(EXIT_FAILURE);
+    }
 
-	//bind address
-	if (bind(socket_desc, (struct sockaddr *)&server, sizeof(server)) < 0)
-	{
-		puts("bind failed");
-	}
+    //Socket Address Creation Parameters
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(PORT);
 
-	puts("bind done");
+    //bind the socket to the specified port
+    if (bind(master_socket, (struct sockaddr *)&address, sizeof(address)) < 0){
+        perror("Bind operation failed");
+        exit(EXIT_FAILURE);
+    }
 
-	//Listen for connections
-	listen(socket_desc, 3);
+    //Listen for a maximum of 5 connections
+    if (listen(master_socket, 5) < 0){
+        perror("listen");
+        exit(EXIT_FAILURE);
+    }
 
-	//Accept connections
-	puts("Waiting for incoming connections");
-	c = sizeof(struct sockaddr_in);
+    //Accept any incoming connections
+    addrlen = sizeof(address);
+    puts("Waiting for Incoming Connections");
 
-	while((new_socket = accept(socket_desc, (struct sockaddr *)&client, (socklen_t *)&c)))
-	{
-		puts("connection accepted");
-		//Initial Messages to client
-		server_message = "WELCOME TEAM MEMBER\n\n========================= Here are the System Public Parameters =====================================\n";
-        printf("Size of welcome message = %lu\n", strlen(server_message));
-		write(new_socket, server_message, strlen(server_message));
+    while (TRUE){
+        //clear the socket set
+        FD_ZERO(&readfds);
+        //add the master socket to the set
+        FD_SET(master_socket, &readfds);
+        max_sd = master_socket;
 
-		write(new_socket, P_PUB.val, P_PUB.len);
-		//write(new_socket, P_PARAM.val, P_PARAM.len);
-        write(new_socket, p_x, sizeof(p1));
-        write(new_socket, p_y, sizeof(p2));
-		write(new_socket, q_param, sizeof(q));
+        //add children sockets to the set
+        for (i = 0; i < max_clients; i++){
+            //socket descriptor
+            sd = client_socket[i];
+            //if the descriptor is valid, add to the read list
+            if(sd > 0)
+                FD_SET(sd, &readfds);
+            if(sd > max_sd)
+                max_sd = sd;
+        }
 
-		server_message = "===================== Assigning you a Thread ======================\n";
-		write(new_socket, server_message, strlen(server_message));
+        //Indefinitely wait for any activity on any of the sockets
+        activity = select(max_sd + 1, &readfds, NULL, NULL, NULL);
+        if ((activity < 0) && (errno!=EINTR)){
+            printf("Error with Selecting Activity\n");
+        }
 
-		//initiating threads
-		pthread_t sniffer_thread;
-		new_sock = malloc(1);
-		*new_sock = new_socket;
+        //Activity of the master socket
+        if (FD_ISSET(master_socket, &readfds)){
+            //Accept Incoming Connection
+            if ((new_socket = accept(master_socket, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0){
+                perror("Error Accepting Connection");
+                exit(EXIT_FAILURE);
+            }
 
-		if (pthread_create(&sniffer_thread, NULL, connection_handler, (void*) new_sock) < 0){
-			perror("could not create thread");
-			return 1;
-		}
+            printf("New Connection, Socket FD is %d, IP is: %s, Port: %d\n", new_socket, inet_ntoa(address.sin_addr), ntohs(address.sin_port));
 
-		//Now joing thread
-		puts("handler assigned");
+            puts("=================== Client Connected =======================");
+            //Initial Messages to client
+            char *server_message = "WELCOME TEAM MEMBER\n\n========================= Here are the System Public Parameters =====================================\n";
+            
+            write(new_socket, server_message, strlen(server_message));
+            write(new_socket, P_PUB.val, P_PUB.len);
+            write(new_socket, p_x, sizeof(p1));
+            write(new_socket, p_y, sizeof(p2));
+            write(new_socket, q_param, sizeof(q));
 
-	}
+            
+            //Receive Partial Key Generation Parameters
+            char p_A[2 * EFS_ED25519 + 1];
+            char clientID[1];
+            octet P_A = {0, sizeof(p_A), p_A};
+            
+            recv(new_socket, clientID, 1, 0);
+            printf("Client %s's Public Key = ", clientID);
 
-	if (new_socket < 0)
-	{
-		perror("accept failed");
-	}
+            recv(new_socket, p_A, sizeof(p_A), 0);
+            OCT_jbytes(&P_A, p_A, sizeof(p_A));
+            OCT_output(&P_A);
 
-	// =====================================================================================================================================
+            //Add socket to array of sockets
+            for (i = 0; i < max_clients; i++){
+                if(client_socket[i] == 0){
+                    client_socket[i] = new_socket;
+                    printf("Adding Socket to List of Sockets as %d\n", i);
+                    break;
+                }
+            }
+        }
 
-	close(socket_desc);
+        for (i = 0; i < max_clients; i++){
+            sd = client_socket[i];
+
+            if (FD_ISSET( sd , &readfds)){  
+                //Check if it was for closing , and also read the 
+                //incoming message 
+                if ((valread = read( sd , buffer, 1024)) == 0){  
+                    //Somebody disconnected , get his details and print 
+                    getpeername(sd , (struct sockaddr*)&address , (socklen_t*)&addrlen);  
+                    printf("Host disconnected , IP: %s , Port: %d \n" , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));      
+                    //Close the socket and mark as 0 in list for reuse 
+                    close( sd );  
+                    client_socket[i] = 0;  
+                }  
+                     
+                //Echo back the message that came in 
+                else{  
+                    //set the string terminating NULL byte on the end of the data read 
+                    buffer[valread] = '\0';  
+                    send(sd , buffer , strlen(buffer) , 0 );  
+                }  
+            }  
+        }
+    }
 	
 	return 0;
 }
 
+/*
 void *connection_handler(void *socket_desc)
 {
-	//sock descriptor
-	int sock = *(int*)socket_desc;
-	int read_size;
-	char *server_message, client_message[2000];
+    //sock descriptor
+    int sock = *(int*)socket_desc;
+    int read_size;
+    char *server_message, client_message[200], clientID[1];
 
-	//send message to client
-	server_message = "================== INITIALIZING COMMUNICATION =======================\n";
-	write(sock, server_message, strlen(server_message));
+    char p_A[2 * EFS_ED25519 + 1];
+    octet P_A = {0, sizeof(p_A), p_A};
 
-	//receive message from client
-	/*
-	while ((read_size = recv(sock, client_message, 2000, 0)) > 0){
-		//repeat message back to client
-		write(sock, client_message, strlen(client_message));
-	}
+    printf("Thread number %ld\n", pthread_self());
 
-	if(read_size == 0){
-		puts("client disconnected");
-		fflush(stdout);
-	}
-	else if(read_size == -1){
-		perror("recv failed");
-	}
-	*/
+    //send message to client
+    server_message = "=========================== INITIALIZING FULL KEY GENERATION ==============================\n\n";
+    write(sock, server_message, strlen(server_message));
+    bzero(server_message, 93);
 
-	for (;;) {
-		bzero(client_message, 2000);
-		read(sock, client_message, 2000);
+    for (;;) {
+        printf("\n================================ Parameters from Client ===================================\n");
 
-		printf("Message from Client: %s\n", client_message);
-		server_message = "Well received\n";
-		write(sock, server_message, 2000);
+        //Receive Partial Key Generation Parameters
+        recv(sock, clientID, 1, 0);
+        printf("Client %s's Public Key = ", clientID);
 
-		if(strncmp("exit", client_message, 4) == 0) {
-			printf("Client Exited\n");
-			break;
-		}
+        recv(sock, p_A, sizeof(p_A), 0);
+        OCT_jbytes(&P_A, p_A, sizeof(p_A));
+        OCT_output(&P_A);
 
-	}
+        // if msg contains "Exit" then client exit and chat ended.
+        if (strncmp("exit", server_message, 4) == 0) {
+            printf("Server Exit...\n");
+            break;
+        }
 
-	//release socket
-	free(socket_desc);
+    }
 
-	return 0;
+    //release socket
+    free(socket_desc);
+
+    return 0;
 }
+*/
