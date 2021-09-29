@@ -66,31 +66,29 @@ int gen_secret_value(csprng *RNG, octet *SECRET_VALUE, octet *PUBLIC_VALUE)
 }
 
 
-int keyretrieval(BIG_256_56 S_i, BIG_256_56 X_i, BIG_256_56 C_i, ECP_ED25519 *P_i, ECP_ED25519 *R_i, char *ID_i, octet *GRPKEY)
+int keyretrieval(BIG_256_56 S_I, BIG_256_56 X_I, BIG_256_56 C_I, octet *P_I, octet *R_I, char *ID, BIG_256_56 KEY)
 {
 	//Copy the points P and T into temporary values for use in this function
 	ECP_ED25519 V_TP, P_TP;
 	ECP_ED25519_copy(&P_TP, &P);
 	ECP_ED25519_fromOctet(&V_TP, &V);
 
-	//Y_A and T_A
-    char y_i[2 * EFS_ED25519 + 1];
+	//T_I
     char t_i[2 * EFS_ED25519 + 1];
-    octet Y_i = {0, sizeof(y_i), y_i};
     octet T_i = {0, sizeof(t_i), t_i};
 
 	//Compute T_i = (s_i + x_i).V
 	//s_i + x_i
 	BIG_256_56 sum, mul_val, v_val;
-	BIG_256_56_modadd(sum, S_i, X_i, q);
+	BIG_256_56_modadd(sum, S_I, X_I, q);
 
 	//(s_i + x_i) . V
 	ECP_ED25519_mul(&V_TP, sum);
 	ECP_ED25519_toOctet(&T_i, &V_TP, false); 
 
-    printf("T_I: ");
-    OCT_output(&T_i);
-    printf("\n");
+    //printf("T_I: ");
+    //OCT_output(&T_i);
+    //printf("\n");
 
     //Hash variables
 	char kk[65*4 + 1];
@@ -100,25 +98,19 @@ int keyretrieval(BIG_256_56 S_i, BIG_256_56 X_i, BIG_256_56 C_i, ECP_ED25519 *P_
 	char kmsg[64];
 	octet KMSG = {0, sizeof(kmsg), kmsg};
 
-	//Create the message to be hashed: H_1(Y_i, V, T_i, ID, R_i,P_i)
-    char pA1[2 * EFS_ED25519 + 1];
-    char pA2[2 * EFS_ED25519 + 1];  
-    octet PI = {0, sizeof(pA1), pA1};
-    octet RI = {0, sizeof(pA2), pA2};
-    ECP_ED25519_toOctet(&PI, P_i, false);
-    ECP_ED25519_toOctet(&RI, R_i, false);
+	//Create the message to be hashed: H_1(V, T_i, ID, R_i,P_i)
     OCT_empty(&KK);
     OCT_joctet(&KK, &V);
     OCT_joctet(&KK, &T_i);
-    OCT_jbytes(&KK, ID_i, 1);
-    OCT_joctet(&KK, &RI);
-    OCT_joctet(&KK, &PI);
+    OCT_jbytes(&KK, ID, 1);
+    OCT_joctet(&KK, R_I);
+    OCT_joctet(&KK, P_I);
 
     //Perform the hashing using SHA256
 	SPhash(MC_SHA2, SHA256, &KMSG, &KK);
-	printf("XOR Hash Digest: ");
-    OCT_output(&KMSG);
-    printf("\n");
+	//printf("XOR Hash Digest: ");
+    //OCT_output(&KMSG);
+    //printf("\n");
 
     //Compute XOR to generate Ciphertext
     BIG_256_56 h_val, k_val;
@@ -126,13 +118,15 @@ int keyretrieval(BIG_256_56 S_i, BIG_256_56 X_i, BIG_256_56 C_i, ECP_ED25519 *P_
 
  
     BIG_256_56_norm(h_val);
-    BIG_256_56_norm(C_i);
+    BIG_256_56_norm(C_I);
 
-    for (int i = 0; i < NLEN_256_56; i++)			// K_g = C_i XOR H_1(V,T,)
-        k_val[i] = h_val[i] ^ C_i[i];		
-    
-    GRPKEY->len = EGS_ED25519;
-    BIG_256_56_toBytes(GRPKEY->val, k_val);
+    for (int j = 0; j < NLEN_256_56; j++)
+        k_val[j] = h_val[j] ^ C_I[j];               										// K_g = C_i XOR H_1(V,T,)
+
+    printf("\n======================================================================================================================\n");
+    printf("RETREIVED KEY = ");
+    BIG_256_56_output(k_val);
+    printf("\n======================================================================================================================\n");	
 
     return 0;
 }
@@ -157,11 +151,13 @@ int main(int argc, char *argv[])
 	struct sockaddr_in server;
 	char client_message[200], server_reply[200];
 	char welcome[123];
-	char *Q, *p_x, *p_y;
+	BIG_256_56 C_I;
+	char *Q, *p_x, *p_y, *c;
 	BIG_256_56 p1, p2;
 	Q = malloc(sizeof(q));
 	p_x = malloc(sizeof(p1));
 	p_y = malloc(sizeof(p2));
+	c = malloc(sizeof(C_I));
 
 
 	printf("======================== Begin Socket Creation =========================== \n");
@@ -217,11 +213,16 @@ int main(int argc, char *argv[])
 	printf("\n");
 
 	// ======================================================================================================================================================
-	//Partial Secret Parameters for entity
-	char secA[2 * EGS_ED25519];
-    char pubA[2 * EFS_ED25519 + 1];    
-    octet X_A = {0, sizeof(secA), secA};
-    octet P_A = {0, sizeof(pubA), pubA};
+	//Security Parameters for the user
+	char x_i[2 * EGS_ED25519]; 
+	char s_i[2 * EGS_ED25519];
+    char p_i[2 * EFS_ED25519 + 1], r_i[2 * EFS_ED25519 + 1];    
+    octet X_I = {0, sizeof(x_i), x_i};
+    octet P_I = {0, sizeof(p_i), p_i};
+    octet S_I = {0, sizeof(s_i), s_i};
+    octet R_I = {0, sizeof(r_i), r_i};
+
+    BIG_256_56 x_val, s_val, KEY;
 
     //Random number generator parameters
     char raw[100];
@@ -239,61 +240,85 @@ int main(int argc, char *argv[])
 
     CREATE_CSPRNG(&RNG, &RAW);  // initialise strong RNG
 	
-	/*
-    //Receive more miscellaenous messages
-	recv(socket_desc, server_reply, 93, 0);
-	puts(server_reply);
-	bzero(server_reply, 93);
-	*/
 
 	//Parameters for Requesting for Partial Key Parameters
-	char *ID = "A";
-	printf("Key Initialization Process\n");
+	char ID;
 	
-
-	printf("\nGenerating Partial Secret Parameters\n\n");
-	printf("===============================================================================================================================\n");
-	//Generate A's private and public keys
-	gen_secret_value(&RNG, &X_A, &P_A);
-
-	printf("%s's Partial Private Key = ", ID);
-	OCT_output(&X_A);
-	printf("\n");
-	printf("%s's Partial Public Key = ", ID);
-	OCT_output(&P_A);
-    printf("\n");
-    printf("===============================================================================================================================\n\n");
-
-	//Sending request paramters to the KGC/TL
-	write(socket_desc, ID, 1);
-	write(socket_desc, P_A.val, P_A.len);
-
-	/*
 	for (;;) {
-		printf("Welcome to Key Initialization Process\n");
+		printf("\n\nWelcome to Key Initialization Process\n");
 		printf("Enter the identity of the Client.\nEither 'A', 'B', 'C', or 'D'. Enter 'exit' to quit the process\n");
-		int n = 0;
-		while ((ID[n++] = getchar()) != '\n')
-			;
+		scanf("%c", &ID);
 
-		printf("\nGenerating Partial Secret Parameters\n\n");
+		printf("\nGenerating Partial Secret Parameters for User %c ........\n\n", ID);
 		printf("===============================================================================================================================\n");
 		//Generate A's private and public keys
-		gen_secret_value(&RNG, &X_A, &P_A);
+		gen_secret_value(&RNG, &X_I, &P_I);
 
-		printf("%c's Partial Private Key = ", ID[1]);
-	    OCT_output(&X_A);
+		printf("%c's Secret Key = ", ID);
+	    OCT_output(&X_I);
+	    BIG_256_56_fromBytes(x_val, X_I.val);
 	    printf("\n");
-	    printf("%c's Partial Public Key = ", ID[1]);
-	    OCT_output(&P_A);
+	    printf("%c's Partial Public Key = ", ID);
+	    OCT_output(&P_I);
 	    printf("\n");
 	    printf("===============================================================================================================================\n\n");
 
 		//Sending request paramters to the KGC/TL
-		write(socket_desc, ID, 1);
-		write(socket_desc, P_A.val, P_A.len);
+		write(socket_desc, &ID, 1);
+		write(socket_desc, P_I.val, P_I.len);
 
-		write(socket_desc, client_message, sizeof(client_message));
+		//Receive partial parameters from the KGC/TL
+		recv(socket_desc, s_i, 32, 0);	//S_I value
+		BIG_256_56_fromBytes(s_val, s_i);
+		printf("Partial Private Key from KGC = ");
+		OCT_jbytes(&S_I, s_i, 32);
+		OCT_output(&S_I);
+
+		recv(socket_desc, r_i, sizeof(r_i), 0);	//R_I value
+		printf("Partial Public Key from KGC = ");
+		OCT_jbytes(&R_I, r_i, sizeof(r_i));
+		OCT_output(&R_I);
+
+		//Retrieve the Ciphertext and V value from the TL and convert to the BIG256 number type
+		recv(socket_desc, c, 32, 0);
+		printf("Received Ciphertext = ");
+		BIG_256_56_fromBytes(C_I, c);
+		BIG_256_56_output(C_I);
+		printf("\n");
+		recv(socket_desc, pubvalue, sizeof(pubvalue), 0);
+		printf("V value from KGC = ");
+		OCT_jbytes(&V, pubvalue, sizeof(pubvalue));
+		OCT_output(&V);
+
+		//Retrieve the Generated Key
+		keyretrieval(s_val, x_val, C_I, &P_I, &R_I, &ID, KEY);
+		//printf("Retrieved Key = ");
+		//BIG_256_56_output(KEY);
+
+		
+		recv(socket_desc, c, sizeof(C_I), 0);
+		printf("Updated Ciphertext = ");
+		BIG_256_56_fromBytes(C_I, c);
+		BIG_256_56_output(C_I);
+		printf("\n");
+		recv(socket_desc, pubvalue, sizeof(pubvalue), 0);
+		printf("Updated V value from KGC = ");
+		OCT_jbytes(&V, pubvalue, sizeof(pubvalue));
+		OCT_output(&V);
+		keyretrieval(s_val, x_val, C_I, &P_I, &R_I, &ID, KEY);
+
+		recv(socket_desc, c, sizeof(C_I), 0);
+		printf("Updated Ciphertext = ");
+		BIG_256_56_fromBytes(C_I, c);
+		BIG_256_56_output(C_I);
+		printf("\n");
+		recv(socket_desc, pubvalue, sizeof(pubvalue), 0);
+		printf("Updated V value from KGC = ");
+		OCT_jbytes(&V, pubvalue, sizeof(pubvalue));
+		OCT_output(&V);
+		keyretrieval(s_val, x_val, C_I, &P_I, &R_I, &ID, KEY);
+		
+
 		//receive response from the server
 		bzero(server_reply, 200);
 		read(socket_desc, server_reply, sizeof(server_reply));
@@ -303,10 +328,9 @@ int main(int argc, char *argv[])
 			break;
 		}
 	}
-	*/
 
 	close(socket_desc);
 
-	
+	KILL_CSPRNG(&RNG);
 	return 0;
 }

@@ -31,15 +31,13 @@ octet V = {0, sizeof(pubvalue), pubvalue};
 //Definition of a user in AinQ
 typedef struct {
     char *ID_I;
-    BIG_256_56 *X_I;
-    BIG_256_56 *S_I;
     ECP_ED25519 *P_I;
     ECP_ED25519 *R_I;
-    BIG_256_56 *C_I;
-    BIG_256_56 *K_I;
+    BIG_256_56 C_I;
+    char *c;
 } GL_user;
 
-GL_user GL[5000];
+GL_user GL[500];
 
 //Function to Generate Initial Secret and Public Key pairs
 int gen_secret_value(csprng *RNG, octet *SECRET_VALUE, octet *PUBLIC_VALUE) 
@@ -148,10 +146,10 @@ int gen_partial_key(csprng *RNG, octet *P_i, octet *R_i, octet *X, octet *PT, ch
 }
 
 //Group Key Generation Function
-int gengroupkey(GL_user * GL, csprng *RNG, octet * P_PUB)
+int gengroupkey(GL_user * GL, csprng *RNG, octet * P_PUB, int cnt)
 {
     //Group Key, V and l_k generation
-    int pest;
+    int pest, i;
 
     BIG_256_56 k_g, l_k; //k_g is the group key here
     //Generate random K_g and l_k   
@@ -188,7 +186,7 @@ int gengroupkey(GL_user * GL, csprng *RNG, octet * P_PUB)
     OCT_output(&V);
     printf("\n");
 
-    for (int cnt = 0; cnt < 1500; cnt ++){
+    for (i = 0; i < cnt; i++){
         //For each received R_i and P_i, do the following
         //Y_A and T_A points on the curve
         char y_i[2 * EFS_ED25519 + 1];
@@ -204,8 +202,8 @@ int gengroupkey(GL_user * GL, csprng *RNG, octet * P_PUB)
         octet PI = {0, sizeof(pA1), pA1};
         octet RI = {0, sizeof(pA2), pA2};
 
-        ECP_ED25519_toOctet(&PI, GL[cnt].P_I, false);
-        ECP_ED25519_toOctet(&RI, GL[cnt].R_I, false);
+        ECP_ED25519_toOctet(&PI, GL[i].P_I, false);
+        ECP_ED25519_toOctet(&RI, GL[i].R_I, false);
 
         //Hash variables
         char mk[132];
@@ -217,15 +215,15 @@ int gengroupkey(GL_user * GL, csprng *RNG, octet * P_PUB)
 
         //Create the message to be hashed: H_0(ID,R_i,P_i)
         OCT_empty(&MK);
-        OCT_jbytes(&MK, GL[cnt].ID_I, 1);
+        OCT_jbytes(&MK, GL[i].ID_I, 1);
         OCT_joctet(&MK, &RI);
         OCT_joctet(&MK, &PI);
 
         //Perform the hashing using SHA256
         SPhash(MC_SHA2, SHA256, &HMSG, &MK);
-        printf("Hash Digest: ");
-        OCT_output(&HMSG);
-        printf("\n");
+        //printf("Hash Digest: ");
+        //OCT_output(&HMSG);
+        //printf("\n");
 
         //H_0(ID,R_i,P_i).P_pub
         BIG_256_56 hh;
@@ -233,16 +231,16 @@ int gengroupkey(GL_user * GL, csprng *RNG, octet * P_PUB)
         ECP_ED25519_mul(&TP_PUB, hh);
         
         //Point Addition Y_i = R_i + TP_PUB + P_i
-        ECP_ED25519_add(&TP_PUB, GL[cnt].R_I);
-        ECP_ED25519_add(&TP_PUB, GL[cnt].P_I);
+        ECP_ED25519_add(&TP_PUB, GL[i].R_I);
+        ECP_ED25519_add(&TP_PUB, GL[i].P_I);
         ECP_ED25519_toOctet(&Y_I, &TP_PUB, false); 
 
         //Compute T_A
         ECP_ED25519_mul(&TP_PUB, l_k);
         ECP_ED25519_toOctet(&T_I, &TP_PUB, false);
-        printf("T_I: ");
-        OCT_output(&T_I);
-        printf("\n"); 
+        //printf("T_I: ");
+        //OCT_output(&T_I);
+        //printf("\n"); 
 
         //Final Hash variables
         char kk[65*4 + 1];
@@ -256,15 +254,15 @@ int gengroupkey(GL_user * GL, csprng *RNG, octet * P_PUB)
         OCT_empty(&KK);
         OCT_joctet(&KK, &V);
         OCT_joctet(&KK, &T_I);
-        OCT_jbytes(&KK, GL[cnt].ID_I, 1);
+        OCT_jbytes(&KK, GL[i].ID_I, 1);
         OCT_joctet(&KK, &RI);
         OCT_joctet(&KK, &PI);
 
         //Perform the hashing using SHA256
         SPhash(MC_SHA2, SHA256, &KMSG, &KK);
-        printf("XOR Hash Digest: ");
-        OCT_output(&KMSG);
-        printf("\n");
+        //printf("XOR Hash Digest: ");
+        //OCT_output(&KMSG);
+        //printf("\n");
 
         //Compute XOR to generate Ciphertext
         BIG_256_56 h_val, c_i;
@@ -274,19 +272,18 @@ int gengroupkey(GL_user * GL, csprng *RNG, octet * P_PUB)
        
         BIG_256_56_norm(h_val);
         BIG_256_56_norm(k_g);
-        for (int i = 0; i < NLEN_256_56; i++)
-            c_i[i] = h_val[i] ^ k_g[i];                 //C_I = K_g XOR H_1(Y_A, V, T_A, ID, R_A, P_A)
+        for (int j = 0; j < NLEN_256_56; j++)
+            c_i[j] = h_val[j] ^ k_g[j];                 //C_I = K_g XOR H_1(Y_A, V, T_A, ID, R_A, P_A)
         
-        GL[cnt].C_I = malloc(sizeof(c_i));
-        GL[cnt].C_I = &c_i;
+        BIG_256_56_copy(GL[i].C_I, c_i);
+        
+        GL[i].c = malloc(sizeof(c_i));
+        BIG_256_56_toBytes(GL[i].c, c_i);       //Convert Ciphertext to Byte for Sending
+        //GL[i].C_I = c_i;
     }
 
     return 0;
 }
-
-
-//Thread handling function for multi-threading
-void *connection_handler(void *);
 
 //Function display strings
 void displayString(char *sample, int len){
@@ -421,6 +418,9 @@ int main(int argc, char *argv[])
     addrlen = sizeof(address);
     puts("Waiting for Incoming Connections");
 
+    //count number of connections so far
+    int cnt = 0;
+
     while (TRUE){
         //clear the socket set
         FD_ZERO(&readfds);
@@ -455,7 +455,7 @@ int main(int argc, char *argv[])
 
             printf("New Connection, Socket FD is %d, IP is: %s, Port: %d\n", new_socket, inet_ntoa(address.sin_addr), ntohs(address.sin_port));
 
-            puts("=================== Client Connected =======================");
+            puts("\n=================== Client Connected =======================");
             //Initial Messages to client
             char *server_message = "WELCOME TEAM MEMBER\n\n========================= Here are the System Public Parameters =====================================\n";
             
@@ -467,25 +467,83 @@ int main(int argc, char *argv[])
 
             
             //Receive Partial Key Generation Parameters
-            char p_A[2 * EFS_ED25519 + 1];
+            char p_i[2 * EFS_ED25519 + 1], r_i[2 * EFS_ED25519 + 1];
+            char s_i[2 * EGS_ED25519];
             char clientID[1];
-            octet P_A = {0, sizeof(p_A), p_A};
+            octet P_I = {0, sizeof(p_i), p_i};
+            octet R_I = {0, sizeof(r_i), r_i};
+            octet S_I = {0, sizeof(s_i), s_i};
             
             recv(new_socket, clientID, 1, 0);
-            printf("Client %s's Public Key = ", clientID);
+            printf("\nUser %s's Public Key = ", clientID);
 
-            recv(new_socket, p_A, sizeof(p_A), 0);
-            OCT_jbytes(&P_A, p_A, sizeof(p_A));
-            OCT_output(&P_A);
+            recv(new_socket, p_i, sizeof(p_i), 0);
+            OCT_jbytes(&P_I, p_i, sizeof(p_i));
+            OCT_output(&P_I);
 
-            //Add socket to array of sockets
+            //Generate partial private and public key for the user
+            gen_partial_key(&RNG, &P_I, &R_I, &X, &S_I, clientID);
+            printf("User %s's Partial Private Key = ", clientID);
+            OCT_output(&S_I);
+            printf("User %s's Partial Public Key = ", clientID);
+            OCT_output(&R_I);
+            printf("===============================================================================================================================\n");
+            printf("\n");
+
+            //Send the secret parameters back to the user (assumed to be done in a secure manner)
+            write(new_socket, S_I.val, S_I.len);
+            write(new_socket, R_I.val, R_I.len);
+
+            //Add socket to array of sockets and populate the Group List
             for (i = 0; i < max_clients; i++){
                 if(client_socket[i] == 0){
                     client_socket[i] = new_socket;
-                    printf("Adding Socket to List of Sockets as %d\n", i);
+                    cnt = cnt+1;
+                    ECP_ED25519 p_val, r_val;
+                    ECP_ED25519_fromOctet(&p_val, &P_I);
+                    ECP_ED25519_fromOctet(&r_val, &R_I);
+
+                    //Store Values in the Struct of Arrays for later use
+                    GL[i].ID_I = (char *)malloc(strlen(clientID)); //The ID
+                    strcpy(GL[i].ID_I, clientID);
+                    GL[i].P_I = malloc(sizeof(p_val));  //Partial Public Key from the User
+                    ECP_ED25519_copy(GL[i].P_I, &p_val);
+                    GL[i].R_I = malloc(sizeof(r_val));  //Partial Public Key from the KGC
+                    ECP_ED25519_copy(GL[i].R_I, &r_val);
+
+                    printf("===============================================================================================================================\n\n");
                     break;
-                }
+                }  
             }
+
+            printf("Updating contents of the Group List\n");
+            printf("Number of Users in the Group %d\n\n", cnt);
+
+            //Generating a Group Key for the Group
+            printf("\nGenerating Group Key for the Group\n");
+            gengroupkey(GL, &RNG, &P_PUB, cnt);
+            
+            for (i = 0; i < cnt; i++){
+                printf("User %s's P_I = ", GL[i].ID_I);
+                ECP_ED25519_output(GL[i].P_I);
+                printf("User %s's R_I = ", GL[i].ID_I);
+                ECP_ED25519_output(GL[i].R_I);
+                printf("User %s's C_I = ", GL[i].ID_I);
+                BIG_256_56_output(GL[i].C_I);
+                printf("\n\n");
+            }
+            printf("===============================================================================================================================\n");
+
+            //Sending Ciphertext back to the User
+            for (i = 0; i < max_clients; i++){
+                if(client_socket[i] != 0){
+                    printf("Sending User %s's Ciphertext\n", GL[i].ID_I);
+                    write(client_socket[i], GL[i].c, 32);
+                    write(client_socket[i], V.val, V.len);
+                    //break;
+                }  
+            }
+
         }
 
         for (i = 0; i < max_clients; i++){
@@ -513,49 +571,6 @@ int main(int argc, char *argv[])
         }
     }
 	
+    KILL_CSPRNG(&RNG);
 	return 0;
 }
-
-/*
-void *connection_handler(void *socket_desc)
-{
-    //sock descriptor
-    int sock = *(int*)socket_desc;
-    int read_size;
-    char *server_message, client_message[200], clientID[1];
-
-    char p_A[2 * EFS_ED25519 + 1];
-    octet P_A = {0, sizeof(p_A), p_A};
-
-    printf("Thread number %ld\n", pthread_self());
-
-    //send message to client
-    server_message = "=========================== INITIALIZING FULL KEY GENERATION ==============================\n\n";
-    write(sock, server_message, strlen(server_message));
-    bzero(server_message, 93);
-
-    for (;;) {
-        printf("\n================================ Parameters from Client ===================================\n");
-
-        //Receive Partial Key Generation Parameters
-        recv(sock, clientID, 1, 0);
-        printf("Client %s's Public Key = ", clientID);
-
-        recv(sock, p_A, sizeof(p_A), 0);
-        OCT_jbytes(&P_A, p_A, sizeof(p_A));
-        OCT_output(&P_A);
-
-        // if msg contains "Exit" then client exit and chat ended.
-        if (strncmp("exit", server_message, 4) == 0) {
-            printf("Server Exit...\n");
-            break;
-        }
-
-    }
-
-    //release socket
-    free(socket_desc);
-
-    return 0;
-}
-*/
