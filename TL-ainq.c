@@ -121,15 +121,15 @@ int gen_partial_key(csprng *RNG, octet *P_i, octet *R_i, octet *X, octet *PT, ch
     OCT_jbytes(&MK, ID, 1);
     OCT_joctet(&MK, R_i);
     OCT_joctet(&MK, P_i);
-    printf("Message to be Hashed: \n");
-    OCT_output(&MK);
-    printf("\n");
+    //printf("Message to be Hashed: \n");
+    //OCT_output(&MK);
+    //printf("\n");
 
     //Perform the hashing using SHA256
 	SPhash(MC_SHA2, SHA256, &HMSG, &MK);
-	printf("Hash Digest: ");
-    OCT_output(&HMSG);
-    printf("\n");
+	//printf("Hash Digest: ");
+    //OCT_output(&HMSG);
+    //printf("\n");
 
     //Modular multiplication xH_0(ID,R_i,P_I) mod q
     BIG_256_56 x_byte, h_byte, mul_byte, sum_byte;
@@ -518,32 +518,44 @@ int main(int argc, char *argv[])
 
             printf("Updating contents of the Group List\n");
             printf("Number of Users in the Group %d\n\n", cnt);
-
-            //Generating a Group Key for the Group
-            printf("\nGenerating Group Key for the Group\n");
-            gengroupkey(GL, &RNG, &P_PUB, cnt);
             
             for (i = 0; i < cnt; i++){
                 printf("User %s's P_I = ", GL[i].ID_I);
                 ECP_ED25519_output(GL[i].P_I);
                 printf("User %s's R_I = ", GL[i].ID_I);
                 ECP_ED25519_output(GL[i].R_I);
-                printf("User %s's C_I = ", GL[i].ID_I);
-                BIG_256_56_output(GL[i].C_I);
                 printf("\n\n");
             }
             printf("===============================================================================================================================\n");
 
+            if (cnt == 3){
+                //Generating a Group Key for the Group
+                printf("\nGenerating Group Key for the Group\n");
+                gengroupkey(GL, &RNG, &P_PUB, cnt);
+
+                for (i = 0; i < max_clients; i++){
+                    if(client_socket[i] != 0){
+                        printf("Sending User %s's Ciphertext\n", GL[i].ID_I);
+                        write(client_socket[i], GL[i].c, 32);
+                        write(client_socket[i], V.val, V.len);
+                        //break;
+                    }  
+                }
+            }
+            /*
             //Sending Ciphertext back to the User
             for (i = 0; i < max_clients; i++){
-                if(client_socket[i] != 0){
+                if(client_socket[i] != 0 && cnt == 3){
+                    //Generating a Group Key for the Group
+                    printf("\nGenerating Group Key for the Group\n");
+                    gengroupkey(GL, &RNG, &P_PUB, cnt);
                     printf("Sending User %s's Ciphertext\n", GL[i].ID_I);
                     write(client_socket[i], GL[i].c, 32);
                     write(client_socket[i], V.val, V.len);
                     //break;
                 }  
             }
-
+            */
         }
 
         for (i = 0; i < max_clients; i++){
