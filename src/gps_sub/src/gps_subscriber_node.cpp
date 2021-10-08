@@ -63,6 +63,7 @@ int main(int argc, char * argv[])
   // whose address is specified by addr.
   if (connect(sfd, (struct sockaddr *) &addr, sizeof(struct sockaddr_un)) == -1) {
     perror("connect");
+    exit(EXIT_FAILURE);
   }
 
   rclcpp::init(argc, argv);
