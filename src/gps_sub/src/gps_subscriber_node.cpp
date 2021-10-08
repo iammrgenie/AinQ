@@ -44,12 +44,13 @@ int main(int argc, char * argv[])
 {
   struct sockaddr_un addr;
   ssize_t numRead;
-  char buf[BUF_SIZE];
+  //char buf[BUF_SIZE];
 
-  // Create the node socket with domain: AF_UNIX, type: SOCK_STREAM, protocol: 0
+  // Create a new client socket with domain: AF_UNIX, type: SOCK_STREAM, protocol: 0
   int sfd = socket(AF_UNIX, SOCK_STREAM, 0);
   printf("Client socket fd = %d\n", sfd);
 
+  // Make sure socket's file descriptor is legit.
   if (sfd == -1) {
     perror("socket");
   }
@@ -58,21 +59,11 @@ int main(int argc, char * argv[])
   addr.sun_family = AF_UNIX;
   strncpy(addr.sun_path, SV_SOCK_PATH, sizeof(addr.sun_path) - 1);
 
+  // Connects the active socket referred to be sfd to the listening socket
+  // whose address is specified by addr.
   if (connect(sfd, (struct sockaddr *) &addr, sizeof(struct sockaddr_un)) == -1) {
     perror("connect");
   }
-
-  // Read at most BUF_SIZE bytes from STDIN into buf.
-  //while ((numRead = read(STDIN_FILENO, buf, BUF_SIZE)) > 0) {
-    // Then, write those bytes from buf into the socket.
-    //if (write(sfd, buf, numRead) != numRead) {
-      //perror("partial/failed write");
-    //}
-  //}
-
-  //if (numRead == -1) {
-    //perror("read");
-  //}
 
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<GpsSubscriber>());
