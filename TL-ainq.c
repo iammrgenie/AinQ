@@ -528,7 +528,7 @@ int main(int argc, char *argv[])
             }
             printf("===============================================================================================================================\n");
 
-            if (cnt == 3){
+            if (cnt == 1){
                 //Generating a Group Key for the Group
                 printf("\nGenerating Group Key for the Group\n");
                 gengroupkey(GL, &RNG, &P_PUB, cnt);

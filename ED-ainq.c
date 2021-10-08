@@ -1,9 +1,13 @@
 #include <stdio.h>
 #include <sys/socket.h>
+#include <sys/un.h>
+#include <sys/types.h>
 #include <arpa/inet.h>		//inet_addr
 #include <unistd.h>			//write and close
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
+
 
 
 //Crypto headers
