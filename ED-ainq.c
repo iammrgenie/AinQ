@@ -11,6 +11,11 @@
 #include "ecdh_ED25519.h"
 #include "randapi.h"
 
+//IPC socket parameters
+#define BACKLOG 5
+#define SV_SOCK_PATH "tpf_unic_sock.server"
+#define BUF_SIZE 500
+
 //ED25519 curve parameters
 BIG_256_56 q;
 ECP_ED25519 P;
@@ -141,6 +146,62 @@ void displayString(char *sample, int len){
         printf("%02x", ch);
     }
     printf("\n");
+}
+
+void GPS_connect(int TL_address, BIG_256_56 KEY){
+	struct sockaddr_un IPC_addr;
+	int sfd = socket(AF_UNIX, SOCK_STREAM, 0);
+	printf("IPC Socket open at = %d\n", sfd);
+
+	// Make sure socket's file descriptor is legit.
+	if (sfd == -1) {
+		perror("socket");
+	}
+	// Make sure the address we're planning to use isn't too long.
+	if (strlen(SV_SOCK_PATH) > sizeof(IPC_addr.sun_path) - 1) {
+	    perror("Server socket path too long");
+	}
+	// Delete any file that already exists at the address. Make sure the deletion
+	// succeeds. If the error is just that the file/directory doesn't exist, it's fine.
+	if (remove(SV_SOCK_PATH) == -1 && errno != ENOENT) {
+	    perror("remove");
+	}
+	memset(&IPC_addr, 0, sizeof(struct sockaddr_un));
+	IPC_addr.sun_family = AF_UNIX;
+	strncpy(IPC_addr.sun_path, SV_SOCK_PATH, sizeof(IPC_addr.sun_path) - 1);
+	
+	if (bind(sfd, (struct sockaddr *) &IPC_addr, sizeof(struct sockaddr_un)) == -1) {
+	    perror("bind");
+	}
+	
+	if (listen(sfd, BACKLOG) == -1) {
+	    perror("listen");
+	}
+
+	ssize_t numRead;
+	char buf[BUF_SIZE];
+	for (;;) {          /* Handle client connections iteratively */
+	    printf("Waiting for GPS Data Connection...\n");
+	    // NOTE: blocks until a connection request arrives.
+	    int cfd = accept(sfd, NULL, NULL);
+	    printf("Connection made at fd = %d\n", cfd);
+
+	    // Read at most BUF_SIZE bytes from the socket into buf.
+	    while ((numRead = read(cfd, buf, BUF_SIZE)) > 0) {
+	      // Then, write those bytes from buf into STDOUT.
+	      if (write(STDOUT_FILENO, buf, numRead) != numRead) {
+	        perror("partial/failed write");
+	      }
+	    }
+
+	    if (numRead == -1) {
+	      perror("read");
+	    }
+
+	    if (close(cfd) == -1) {
+	      perror("close");
+    	}
+  }
 }
 
 int main(int argc, char *argv[])
@@ -295,7 +356,9 @@ int main(int argc, char *argv[])
 		//printf("Retrieved Key = ");
 		//BIG_256_56_output(KEY);
 
-		
+		GPS_connect(socket_desc, KEY);
+
+		/*
 		recv(socket_desc, c, sizeof(C_I), 0);
 		printf("Updated Ciphertext = ");
 		BIG_256_56_fromBytes(C_I, c);
@@ -317,7 +380,7 @@ int main(int argc, char *argv[])
 		OCT_jbytes(&V, pubvalue, sizeof(pubvalue));
 		OCT_output(&V);
 		keyretrieval(s_val, x_val, C_I, &P_I, &R_I, &ID, KEY);
-		
+		*/
 
 		//receive response from the server
 		bzero(server_reply, 200);
