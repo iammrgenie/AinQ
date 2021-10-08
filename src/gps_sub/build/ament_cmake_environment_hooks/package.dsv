@@ -1,0 +1,4 @@
+source;share/gps_sub/local_setup.bash
+source;share/gps_sub/local_setup.dsv
+source;share/gps_sub/local_setup.sh
+source;share/gps_sub/local_setup.zsh

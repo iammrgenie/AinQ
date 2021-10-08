@@ -1,0 +1,2 @@
+source;share/gps_sub/environment/ament_prefix_path.sh
+source;share/gps_sub/environment/path.sh
