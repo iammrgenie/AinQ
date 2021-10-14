@@ -199,9 +199,11 @@ void GPS_connect(int TL_address, BIG_256_56 KEY){
 	    // Read at most BUF_SIZE bytes from the socket into buf.
 	    while ((numRead = read(nw_sock, buf, BUF_SIZE)) > 0) {
 	      // Then, write those bytes from buf into STDOUT.
+	      printf("Latitude = ");
 	      if (write(STDOUT_FILENO, buf, numRead) != numRead) {
 	        perror("partial/failed write");
 	      }
+	      printf("\n");
 	    }
 
 	    if (numRead == -1) {
