@@ -26,6 +26,8 @@
 using namespace std::chrono;
 using std::placeholders::_1;
 
+int node_sock = 0;
+
 class GpsSubscriber : public rclcpp::Node
 {
   public:
@@ -40,6 +42,9 @@ class GpsSubscriber : public rclcpp::Node
     void topic_callback(const px4_msgs::msg::SensorGps::SharedPtr msg) const
     {
      RCLCPP_INFO(this->get_logger(), "Coordinates = Latitude: %d Longitude: %d Altitude: '%d'", msg->lat, msg->lon, msg->alt);
+     //char *test;
+     std::string test = std::to_string(msg->lat);
+     write(node_sock, test, strlen(test));
     }
     rclcpp::Subscription<px4_msgs::msg::SensorGps>::SharedPtr subscription_;
 };
@@ -47,7 +52,6 @@ class GpsSubscriber : public rclcpp::Node
 int main(int argc, char * argv[])
 {
   struct sockaddr_in N_addr;
-  int node_sock = 0, valread;
 
   ssize_t numRead;
   //char buf[BUF_SIZE];
