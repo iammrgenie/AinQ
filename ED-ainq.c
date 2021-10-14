@@ -379,6 +379,7 @@ int main(int argc, char *argv[])
 		keyretrieval(s_val, x_val, C_I, &P_I, &R_I, &ID);
 		BIG_256_56_toBytes(key_bytes, KEY);
 		printf("1\n");
+		BIG_256_56_output(KEY);
 		//printf("Retrieved Key = ");
 		//BIG_256_56_output(KEY);
 
