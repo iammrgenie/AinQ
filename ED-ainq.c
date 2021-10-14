@@ -21,7 +21,7 @@
 #define PORT 6666
 
 //ED25519 curve parameters
-BIG_256_56 q;
+BIG_256_56 q, KEY;
 ECP_ED25519 P;
 
 char p_param[2 * EGS_ED25519 +1];
@@ -75,7 +75,7 @@ int gen_secret_value(csprng *RNG, octet *SECRET_VALUE, octet *PUBLIC_VALUE)
 }
 
 
-int keyretrieval(BIG_256_56 S_I, BIG_256_56 X_I, BIG_256_56 C_I, octet *P_I, octet *R_I, char *ID, BIG_256_56 KEY)
+int keyretrieval(BIG_256_56 S_I, BIG_256_56 X_I, BIG_256_56 C_I, octet *P_I, octet *R_I, char *ID)
 {
 	//Copy the points P and T into temporary values for use in this function
 	ECP_ED25519 V_TP, P_TP;
@@ -137,6 +137,7 @@ int keyretrieval(BIG_256_56 S_I, BIG_256_56 X_I, BIG_256_56 C_I, octet *P_I, oct
     BIG_256_56_output(k_val);
     printf("\n======================================================================================================================\n");	
 
+    BIG_256_56_copy(KEY, k_val);
     return 0;
 }
 
@@ -305,7 +306,7 @@ int main(int argc, char *argv[])
     octet S_I = {0, sizeof(s_i), s_i};
     octet R_I = {0, sizeof(r_i), r_i};
 
-    BIG_256_56 x_val, s_val, KEY;
+    BIG_256_56 x_val, s_val;
     char *key_bytes;
 
     //Random number generator parameters
@@ -375,7 +376,7 @@ int main(int argc, char *argv[])
 		OCT_output(&V);
 
 		//Retrieve the Generated Key
-		keyretrieval(s_val, x_val, C_I, &P_I, &R_I, &ID, KEY);
+		keyretrieval(s_val, x_val, C_I, &P_I, &R_I, &ID);
 		BIG_256_56_toBytes(key_bytes, KEY);
 		printf("1\n");
 		//printf("Retrieved Key = ");
