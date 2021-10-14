@@ -14,7 +14,6 @@
 #include "ecdh_ED25519.h"
 #include "randapi.h"
 
-#define ECB 1
 #include "aes.h"
 
 //IPC socket parameters

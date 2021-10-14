@@ -138,7 +138,7 @@ typedef struct
 
 /* Symmetric Encryption AES structure */
 
-#define ECB   0  /**< Electronic Code Book */
+#define ECB   1  /**< Electronic Code Book */
 #define CBC   1  /**< Cipher Block Chaining */
 #define CFB1  2  /**< Cipher Feedback - 1 byte */
 #define CFB2  3  /**< Cipher Feedback - 2 bytes */
