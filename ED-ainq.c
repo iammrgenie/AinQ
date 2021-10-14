@@ -17,7 +17,7 @@
 #include "aes.h"
 
 //IPC socket parameters
-#define BUF_SIZE 500
+#define BUF_SIZE 10
 #define PORT 6666
 
 //ED25519 curve parameters
@@ -378,11 +378,7 @@ int main(int argc, char *argv[])
 
 		//Retrieve the Generated Key
 		keyretrieval(s_val, x_val, C_I, &P_I, &R_I, &ID, KEY);
-		printf("1\n");
-		BIG_256_56_output(KEY);
-		printf("\n22\n");
 		BIG_256_56_toBytes(key_bytes, KEY);
-		printf("33\n");
 		//printf("Retrieved Key = ");
 		//BIG_256_56_output(KEY);
 
