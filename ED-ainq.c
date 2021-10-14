@@ -14,6 +14,8 @@
 #include "ecdh_ED25519.h"
 #include "randapi.h"
 
+#include "aes.h"
+
 //IPC socket parameters
 #define BUF_SIZE 500
 #define PORT 6666
@@ -150,11 +152,14 @@ void displayString(char *sample, int len){
     printf("\n");
 }
 
-void GPS_connect(int TL_address, BIG_256_56 KEY){
+void GPS_connect(int TL_address, char * KEY){
 	struct sockaddr_in CL_addr;
 	int ser_addr, nw_sock, valread;
 	int opt = 1;
 	int add_len = sizeof(CL_addr);
+
+	struct AES_ctx ctx;
+	AES_init_ctx(&ctx, (uint_8*)KEY);
 
 
 	if((ser_addr = socket(AF_INET, SOCK_STREAM, 0)) == 0){
@@ -203,6 +208,10 @@ void GPS_connect(int TL_address, BIG_256_56 KEY){
 	        perror("partial/failed write");
 	      }
 	      printf("\n");
+	      AES_ECB_encrypt(&ctx, (uint_8*)buf);
+	      printf("Encrypted Value = ");
+	      displayString((char*)buff);
+	      write(TL_address, cipher, strlen(cipher));
 	    }
 
 	    if (numRead == -1) {
@@ -296,6 +305,7 @@ int main(int argc, char *argv[])
     octet R_I = {0, sizeof(r_i), r_i};
 
     BIG_256_56 x_val, s_val, KEY;
+    char *key_bytes;
 
     //Random number generator parameters
     char raw[100];
@@ -365,10 +375,11 @@ int main(int argc, char *argv[])
 
 		//Retrieve the Generated Key
 		keyretrieval(s_val, x_val, C_I, &P_I, &R_I, &ID, KEY);
+		BIG_256_56_toBytes(key_bytes, KEY);
 		//printf("Retrieved Key = ");
 		//BIG_256_56_output(KEY);
 
-		GPS_connect(socket_desc, KEY);
+		GPS_connect(socket_desc, key_bytes);
 
 		/*
 		recv(socket_desc, c, sizeof(C_I), 0);
