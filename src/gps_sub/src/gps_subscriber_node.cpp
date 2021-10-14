@@ -3,6 +3,10 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <netinet/in.h>
+#include <sys/types.h>
+#include <arpa/inet.h>    //inet_addr
+#include <errno.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,7 +53,7 @@ int main(int argc, char * argv[])
   //char buf[BUF_SIZE];
 
   // Create a new client socket with domain: AF_UNIX, type: SOCK_STREAM, protocol: 0
-  if((int node_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+  if((node_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
     perror("Socket Failed");
     exit(EXIT_FAILURE);
   }
@@ -62,7 +66,7 @@ int main(int argc, char * argv[])
 
 
   // Connects the active socket via the listening socket
-  if (connect(node_sock, (struct sockaddr *)&N_addr, sizeof(N_addr)) < 0){
+  if(connect(node_sock, (struct sockaddr *)&N_addr, sizeof(N_addr)) < 0){
     perror("Connection Error");
     exit(EXIT_FAILURE);
   }
