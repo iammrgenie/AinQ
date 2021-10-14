@@ -158,9 +158,10 @@ void GPS_connect(int TL_address, char * KEY){
 	int opt = 1;
 	int add_len = sizeof(CL_addr);
 
+	printf("2\n");
 	struct AES_ctx ctx;
 	AES_init_ctx(&ctx, (uint8_t*)KEY);
-
+	printf("3\n");
 
 	if((ser_addr = socket(AF_INET, SOCK_STREAM, 0)) == 0){
 		perror("Socket Failed");
@@ -376,6 +377,7 @@ int main(int argc, char *argv[])
 		//Retrieve the Generated Key
 		keyretrieval(s_val, x_val, C_I, &P_I, &R_I, &ID, KEY);
 		BIG_256_56_toBytes(key_bytes, KEY);
+		printf("1\n");
 		//printf("Retrieved Key = ");
 		//BIG_256_56_output(KEY);
 
