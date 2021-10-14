@@ -17,6 +17,7 @@
 
 #define BUF_SIZE 500
 #define SV_SOCK_PATH "tpf_unic_sock.server"
+#define PORT 6666
 
 using namespace std::chrono;
 using std::placeholders::_1;
@@ -29,7 +30,6 @@ class GpsSubscriber : public rclcpp::Node
     {      
       subscription_ = this->create_subscription<px4_msgs::msg::SensorGps>(
       "/sad01/SensorGps_PubSubTopic", 10, std::bind(&GpsSubscriber::topic_callback, this, _1));
-      printf("Hello Hi\n");
     }
 
   private:
@@ -42,27 +42,28 @@ class GpsSubscriber : public rclcpp::Node
 
 int main(int argc, char * argv[])
 {
-  struct sockaddr_un addr;
+  struct sockaddr_in N_addr;
+  int node_sock = 0, valread;
+
   ssize_t numRead;
   //char buf[BUF_SIZE];
 
   // Create a new client socket with domain: AF_UNIX, type: SOCK_STREAM, protocol: 0
-  int sfd = socket(AF_UNIX, SOCK_STREAM, 0);
-  printf("Client socket fd = %d\n", sfd);
-
-  // Make sure socket's file descriptor is legit.
-  if (sfd == -1) {
-    perror("socket");
+  if((int node_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+    perror("Socket Failed");
+    exit(EXIT_FAILURE);
   }
 
-  memset(&addr, 0, sizeof(struct sockaddr_un));
-  addr.sun_family = AF_UNIX;
-  strncpy(addr.sun_path, SV_SOCK_PATH, sizeof(addr.sun_path) - 1);
+  printf("Node socket at = %d\n", node_sock);
 
-  // Connects the active socket referred to be sfd to the listening socket
-  // whose address is specified by addr.
-  if (connect(sfd, (struct sockaddr *) &addr, sizeof(struct sockaddr_un)) == -1) {
-    perror("connect");
+  N_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+  N_addr.sin_family = AF_INET;
+  N_addr.sin_port = htons(PORT);
+
+
+  // Connects the active socket via the listening socket
+  if (connect(node_sock, (struct sockaddr *)&N_addr, sizeof(N_addr)) < 0){
+    perror("Connection Error");
     exit(EXIT_FAILURE);
   }
 

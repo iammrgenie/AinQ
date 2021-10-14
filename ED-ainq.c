@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <netinet/in.h>
 #include <sys/types.h>
 #include <arpa/inet.h>		//inet_addr
 #include <unistd.h>			//write and close
@@ -8,17 +9,14 @@
 #include <stdlib.h>
 #include <errno.h>
 
-
-
 //Crypto headers
 #include <time.h>
 #include "ecdh_ED25519.h"
 #include "randapi.h"
 
 //IPC socket parameters
-#define BACKLOG 5
-#define SV_SOCK_PATH "tpf_unic_sock.server"
 #define BUF_SIZE 500
+#define PORT 6666
 
 //ED25519 curve parameters
 BIG_256_56 q;
@@ -153,33 +151,38 @@ void displayString(char *sample, int len){
 }
 
 void GPS_connect(int TL_address, BIG_256_56 KEY){
-	struct sockaddr_un IPC_addr;
-	int sfd = socket(AF_UNIX, SOCK_STREAM, 0);
-	printf("IPC Socket open at = %d\n", sfd);
+	struct sockaddr_in CL_addr;
+	int ser_addr, nw_sock, valread;
+	int opt = 1;
+	int add_len = sizeof(CL_addr);
 
-	// Make sure socket's file descriptor is legit.
-	if (sfd == -1) {
-		perror("socket");
+
+	if((ser_addr = socket(AF_INET, SOCK_STREAM, 0)) == 0){
+		perror("Socket Failed");
+		exit(EXIT_FAILURE);
 	}
-	// Make sure the address we're planning to use isn't too long.
-	if (strlen(SV_SOCK_PATH) > sizeof(IPC_addr.sun_path) - 1) {
-	    perror("Server socket path too long");
+
+	printf("IPC Socket open at = %d\n", ser_addr);
+
+
+	if(setsockopt(ser_addr, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt))){
+		perror("Setsocopt");
+		exit(EXIT_FAILURE);
 	}
-	// Delete any file that already exists at the address. Make sure the deletion
-	// succeeds. If the error is just that the file/directory doesn't exist, it's fine.
-	if (remove(SV_SOCK_PATH) == -1 && errno != ENOENT) {
-	    perror("remove");
-	}
-	memset(&IPC_addr, 0, sizeof(struct sockaddr_un));
-	IPC_addr.sun_family = AF_UNIX;
-	strncpy(IPC_addr.sun_path, SV_SOCK_PATH, sizeof(IPC_addr.sun_path) - 1);
+
+	CL_addr.sin_family = AF_INET;
+	CL_addr.sin_addr.s_addr = INADDR_ANY;
+	CL_addr.sin_port = htons(PORT);
+
 	
-	if (bind(sfd, (struct sockaddr *) &IPC_addr, sizeof(struct sockaddr_un)) == -1) {
-	    perror("bind");
+	if(bind(ser_addr, (struct sockaddr *) &CL_addr, sizeof(CL_addr)) < 0) {
+	    perror("Binding Failed");
+	    exit(EXIT_FAILURE);
 	}
 	
-	if (listen(sfd, BACKLOG) == -1) {
-	    perror("listen");
+	if(listen(ser_addr, 3) < 0) {
+	    perror("Listen Failed");
+	    exit(EXIT_FAILURE);
 	}
 
 	ssize_t numRead;
@@ -187,11 +190,14 @@ void GPS_connect(int TL_address, BIG_256_56 KEY){
 	for (;;) {          /* Handle client connections iteratively */
 	    printf("Waiting for GPS Data Connection...\n");
 	    // NOTE: blocks until a connection request arrives.
-	    int cfd = accept(sfd, NULL, NULL);
-	    printf("Connection made at fd = %d\n", cfd);
+	    if((nw_sock = accept(ser_addr, (struct sockaddr *)&CL_addr, (socklen_t *)&add_len)) < 0){
+			perror("Accept Failed");
+			exit(EXIT_FAILURE);
+		} 
+	    printf("Connection made at fd = %d\n", nw_sock);
 
 	    // Read at most BUF_SIZE bytes from the socket into buf.
-	    while ((numRead = read(cfd, buf, BUF_SIZE)) > 0) {
+	    while ((numRead = read(nw_sock, buf, BUF_SIZE)) > 0) {
 	      // Then, write those bytes from buf into STDOUT.
 	      if (write(STDOUT_FILENO, buf, numRead) != numRead) {
 	        perror("partial/failed write");
@@ -202,11 +208,12 @@ void GPS_connect(int TL_address, BIG_256_56 KEY){
 	      perror("read");
 	    }
 
-	    if (close(cfd) == -1) {
+	    if (close(nw_sock) == -1) {
 	      perror("close");
     	}
-  }
+  	}
 }
+
 
 int main(int argc, char *argv[])
 {
@@ -235,7 +242,7 @@ int main(int argc, char *argv[])
 		printf("Could not create socket\n");
 	}
 
-	puts("socket done");
+	puts("Socket Created");
 
 	//initialize connection parameters
 	server.sin_addr.s_addr = inet_addr("172.18.32.132");

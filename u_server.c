@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
   }
 
   ssize_t numRead;
-  char buf[BUF_SIZE];
+  char buf[BUFF];
   for (;;) {          /* Handle client connections iteratively */
 
     // Accept a connection. The connection is returned on a NEW
