@@ -159,7 +159,7 @@ void GPS_connect(int TL_address, char * KEY){
 	int add_len = sizeof(CL_addr);
 
 	struct AES_ctx ctx;
-	AES_init_ctx(&ctx, (uint_8*)KEY);
+	AES_init_ctx(&ctx, (uint8_t*)KEY);
 
 
 	if((ser_addr = socket(AF_INET, SOCK_STREAM, 0)) == 0){
@@ -208,10 +208,10 @@ void GPS_connect(int TL_address, char * KEY){
 	        perror("partial/failed write");
 	      }
 	      printf("\n");
-	      AES_ECB_encrypt(&ctx, (uint_8*)buf);
+	      AES_ECB_encrypt(&ctx, (uint8_t*)buf);
 	      printf("Encrypted Value = ");
 	      displayString((char*)buff);
-	      write(TL_address, cipher, strlen(cipher));
+	      //write(TL_address, cipher, strlen(cipher));
 	    }
 
 	    if (numRead == -1) {
