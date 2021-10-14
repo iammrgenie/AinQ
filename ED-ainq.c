@@ -308,6 +308,7 @@ int main(int argc, char *argv[])
 
     BIG_256_56 x_val, s_val, KEY;
     char *key_bytes;
+    key_bytes = malloc(sizeof(KEY));
 
     //Random number generator parameters
     char raw[100];
@@ -379,8 +380,9 @@ int main(int argc, char *argv[])
 		keyretrieval(s_val, x_val, C_I, &P_I, &R_I, &ID, KEY);
 		printf("1\n");
 		BIG_256_56_output(KEY);
-		printf("22\n");
+		printf("\n22\n");
 		BIG_256_56_toBytes(key_bytes, KEY);
+		printf("33\n");
 		//printf("Retrieved Key = ");
 		//BIG_256_56_output(KEY);
 
