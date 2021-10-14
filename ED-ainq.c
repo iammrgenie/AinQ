@@ -210,7 +210,7 @@ void GPS_connect(int TL_address, char * KEY){
 	      printf("\n");
 	      AES_ECB_encrypt(&ctx, (uint8_t*)buf);
 	      printf("Encrypted Value = ");
-	      displayString((char*)buff);
+	      displayString((char*)buf, sizeof(buf));
 	      //write(TL_address, cipher, strlen(cipher));
 	    }
 
