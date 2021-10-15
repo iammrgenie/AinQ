@@ -44,7 +44,7 @@ class GpsSubscriber : public rclcpp::Node
      RCLCPP_INFO(this->get_logger(), "Latitude Value = %d ", msg->lat);
      char *lat_val;
      std::sprintf(lat_val, "%d", msg->lat);
-     printf("Size of Latitude = %d \n", strlen(lat_val));
+     printf("Size of Latitude = %ld \n", strlen(lat_val));
      //write(node_sock, lat_val, strlen(lat_val));
     }
     rclcpp::Subscription<px4_msgs::msg::SensorGps>::SharedPtr subscription_;
