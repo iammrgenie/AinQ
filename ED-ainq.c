@@ -188,7 +188,7 @@ void GPS_connect(int TL_address, char * KEY){
 	    exit(EXIT_FAILURE);
 	}
 
-	char coord[9];
+	char coord[16];
 	ssize_t numRead;
 
 	for (;;) {          /* Handle client connections iteratively */
@@ -208,7 +208,12 @@ void GPS_connect(int TL_address, char * KEY){
 	      		exit(EXIT_FAILURE);
 	    	}
 
-	    	memset(coord, 0, 9);
+	    	AES_ECB_encrypt(&ctx, (uint8_t*)coord);
+		    printf("Encrypted Value = ");
+		    displayString((char*)coord, 16);
+		    //write(TL_address, cipher, strlen(cipher));
+
+	    	//memset(coord, 0, 16);
 	    }
 
 	    /*
@@ -219,10 +224,7 @@ void GPS_connect(int TL_address, char * KEY){
 	        perror("partial/failed write");
 	      }
 	      printf("\n");
-	      AES_ECB_encrypt(&ctx, (uint8_t*)buf);
-	      printf("Encrypted Value = ");
-	      displayString((char*)buf, sizeof(buf));
-	      //write(TL_address, cipher, strlen(cipher));
+	      
 	    }
 
 	    if (numRead == -1) {
