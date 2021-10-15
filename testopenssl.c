@@ -135,8 +135,8 @@ int main(int argc, char **argv)
     free(plaintext);
   }
 
-  EVP_CIPHER_CTX_cleanup(&en);
-  EVP_CIPHER_CTX_cleanup(&de);
+  EVP_CIPHER_CTX_cleanup(en);
+  EVP_CIPHER_CTX_cleanup(de);
 
   return 0;
 }
