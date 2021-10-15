@@ -89,6 +89,8 @@ int main(int argc, char **argv)
      status of enc/dec operations */
   EVP_CIPHER_CTX *en;
   EVP_CIPHER_CTX *de;
+  en = EVP_CIPHER_CTX_new();
+  de = EVP_CIPHER_CTX_new();
 
   /* 8 bytes to salt the key_data during key generation. This is an example of
      compiled in salt. We just read the bit pattern created by these two 4 byte 
