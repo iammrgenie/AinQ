@@ -153,24 +153,20 @@ void displayString(char *sample, int len){
     printf("\n");
 }
 
+//Function to receive GPS data from the ROS2 node
 void GPS_connect(int TL_address, char * KEY){
 	struct sockaddr_in CL_addr;
 	int ser_addr, nw_sock, valread;
 	int opt = 1;
 	int add_len = sizeof(CL_addr);
 
-	printf("2\n");
 	struct AES_ctx ctx;
 	AES_init_ctx(&ctx, (uint8_t*)KEY);
-	printf("3\n");
 
 	if((ser_addr = socket(AF_INET, SOCK_STREAM, 0)) == 0){
 		perror("Socket Failed");
 		exit(EXIT_FAILURE);
 	}
-
-	printf("IPC Socket open at = %d\n", ser_addr);
-
 
 	if(setsockopt(ser_addr, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt))){
 		perror("Setsocopt");
@@ -192,6 +188,7 @@ void GPS_connect(int TL_address, char * KEY){
 	    exit(EXIT_FAILURE);
 	}
 
+
 	ssize_t numRead;
 	char buf[BUF_SIZE];
 	for (;;) {          /* Handle client connections iteratively */
@@ -202,6 +199,10 @@ void GPS_connect(int TL_address, char * KEY){
 			exit(EXIT_FAILURE);
 		} 
 	    printf("Connection made at fd = %d\n", nw_sock);
+
+	    while(1){
+	    	read(nw_sock, coord, )
+	    }
 
 	    // Read at most BUF_SIZE bytes from the socket into buf.
 	    while ((numRead = read(nw_sock, buf, BUF_SIZE)) > 0) {
@@ -379,34 +380,10 @@ int main(int argc, char *argv[])
 		//Retrieve the Generated Key
 		keyretrieval(s_val, x_val, C_I, &P_I, &R_I, &ID, KEY);
 		BIG_256_56_toBytes(key_bytes, KEY);
-		//printf("Retrieved Key = ");
-		//BIG_256_56_output(KEY);
 
+		//Receive GPS data from the Ros2 node on the Board
 		GPS_connect(socket_desc, key_bytes);
 
-		/*
-		recv(socket_desc, c, sizeof(C_I), 0);
-		printf("Updated Ciphertext = ");
-		BIG_256_56_fromBytes(C_I, c);
-		BIG_256_56_output(C_I);
-		printf("\n");
-		recv(socket_desc, pubvalue, sizeof(pubvalue), 0);
-		printf("Updated V value from KGC = ");
-		OCT_jbytes(&V, pubvalue, sizeof(pubvalue));
-		OCT_output(&V);
-		keyretrieval(s_val, x_val, C_I, &P_I, &R_I, &ID, KEY);
-
-		recv(socket_desc, c, sizeof(C_I), 0);
-		printf("Updated Ciphertext = ");
-		BIG_256_56_fromBytes(C_I, c);
-		BIG_256_56_output(C_I);
-		printf("\n");
-		recv(socket_desc, pubvalue, sizeof(pubvalue), 0);
-		printf("Updated V value from KGC = ");
-		OCT_jbytes(&V, pubvalue, sizeof(pubvalue));
-		OCT_output(&V);
-		keyretrieval(s_val, x_val, C_I, &P_I, &R_I, &ID, KEY);
-		*/
 
 		//receive response from the server
 		bzero(server_reply, 200);

@@ -41,11 +41,11 @@ class GpsSubscriber : public rclcpp::Node
   private:
     void topic_callback(const px4_msgs::msg::SensorGps::SharedPtr msg) const
     {
-     //RCLCPP_INFO(this->get_logger(), "Coordinates = Latitude: %d Longitude: %d Altitude: '%d'", msg->lat, msg->lon, msg->alt);
-     //Test Sending
-     char *test;
-     std::sprintf(test, "%d", msg->lat);
-     write(node_sock, test, strlen(test));
+     RCLCPP_INFO(this->get_logger(), "Latitude Value = %d ", msg->lat);
+     char *lat_val;
+     std::sprintf(lat_val, "%d", msg->lat);
+     printf("Size of Latitude = %d \n", strlen(lat_val));
+     //write(node_sock, lat_val, strlen(lat_val));
     }
     rclcpp::Subscription<px4_msgs::msg::SensorGps>::SharedPtr subscription_;
 };
@@ -69,12 +69,13 @@ int main(int argc, char * argv[])
   N_addr.sin_family = AF_INET;
   N_addr.sin_port = htons(PORT);
 
-
+  /*
   // Connects the active socket via the listening socket
   if(connect(node_sock, (struct sockaddr *)&N_addr, sizeof(N_addr)) < 0){
     perror("Connection Error");
     exit(EXIT_FAILURE);
   }
+  */
 
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<GpsSubscriber>());
