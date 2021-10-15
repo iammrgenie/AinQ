@@ -189,6 +189,7 @@ void GPS_connect(int TL_address, char * KEY){
 	}
 
 	char coord[9];
+	ssize_t numRead;
 
 	for (;;) {          /* Handle client connections iteratively */
 	    printf("Waiting for GPS Data Connection...\n");
@@ -199,8 +200,15 @@ void GPS_connect(int TL_address, char * KEY){
 		} 
 
 	    while(1){
-	    	read(nw_sock, coord, 9);
+	    	numRead = read(nw_sock, coord, 9);
 	    	printf("Received Latitude = %s\n", coord);
+
+	    	if (numRead == -1) {
+	      		perror("read");
+	      		exit(EXIT_FAILURE);
+	    	}
+
+	    	bzero(coord, 9);
 	    }
 
 	    /*
