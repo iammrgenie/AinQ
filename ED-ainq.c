@@ -156,7 +156,7 @@ void displayString(char *sample, int len){
 //Function to receive GPS data from the ROS2 node
 void GPS_connect(int TL_address, char * KEY){
 	struct sockaddr_in CL_addr;
-	int ser_addr, nw_sock, valread;
+	int ser_addr, nw_sock;
 	int opt = 1;
 	int add_len = sizeof(CL_addr);
 
@@ -188,9 +188,8 @@ void GPS_connect(int TL_address, char * KEY){
 	    exit(EXIT_FAILURE);
 	}
 
+	char coord[9];
 
-	ssize_t numRead;
-	char buf[BUF_SIZE];
 	for (;;) {          /* Handle client connections iteratively */
 	    printf("Waiting for GPS Data Connection...\n");
 	    // NOTE: blocks until a connection request arrives.
@@ -198,12 +197,13 @@ void GPS_connect(int TL_address, char * KEY){
 			perror("Accept Failed");
 			exit(EXIT_FAILURE);
 		} 
-	    printf("Connection made at fd = %d\n", nw_sock);
 
 	    while(1){
-	    	read(nw_sock, coord, )
+	    	read(nw_sock, coord, 9);
+	    	printf("Received Latitude = %s\n", coord);
 	    }
 
+	    /*
 	    // Read at most BUF_SIZE bytes from the socket into buf.
 	    while ((numRead = read(nw_sock, buf, BUF_SIZE)) > 0) {
 	      // Then, write those bytes from buf into STDOUT
@@ -220,6 +220,7 @@ void GPS_connect(int TL_address, char * KEY){
 	    if (numRead == -1) {
 	      perror("read");
 	    }
+	    */
 
 	    if (close(nw_sock) == -1) {
 	      perror("close");
