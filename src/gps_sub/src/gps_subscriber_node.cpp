@@ -42,9 +42,9 @@ class GpsSubscriber : public rclcpp::Node
     void topic_callback(const px4_msgs::msg::SensorGps::SharedPtr msg) const
     {
      RCLCPP_INFO(this->get_logger(), "Latitude Value = %d ", msg->lat);
-     //char *lat_val;
-     //std::sprintf(lat_val, "%d", msg->lat);
-     //write(node_sock, lat_val, strlen(lat_val));
+     char lat_val[9];
+     std::sprintf(lat_val, "%d", msg->lat);
+     write(node_sock, lat_val, strlen(lat_val));
     }
     rclcpp::Subscription<px4_msgs::msg::SensorGps>::SharedPtr subscription_;
 };
