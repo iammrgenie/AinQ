@@ -208,7 +208,7 @@ void GPS_connect(int TL_address, char * KEY){
 	      		exit(EXIT_FAILURE);
 	    	}
 
-	    	bzero(coord, 9);
+	    	memset(coord, 0, 9);
 	    }
 
 	    /*
