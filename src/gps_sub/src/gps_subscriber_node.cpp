@@ -66,13 +66,12 @@ int main(int argc, char * argv[])
   N_addr.sin_family = AF_INET;
   N_addr.sin_port = htons(PORT);
 
-  /*
+  
   // Connects the active socket via the listening socket
   if(connect(node_sock, (struct sockaddr *)&N_addr, sizeof(N_addr)) < 0){
     perror("Connection Error");
     exit(EXIT_FAILURE);
   }
-  */
 
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<GpsSubscriber>());
