@@ -87,7 +87,8 @@ int main(int argc, char **argv)
 {
   /* "opaque" encryption, decryption ctx structures that libcrypto uses to record
      status of enc/dec operations */
-  EVP_CIPHER_CTX en, de;
+  EVP_CIPHER_CTX *en;
+  EVP_CIPHER_CTX *de;
 
   /* 8 bytes to salt the key_data during key generation. This is an example of
      compiled in salt. We just read the bit pattern created by these two 4 byte 
@@ -105,7 +106,7 @@ int main(int argc, char **argv)
   key_data_len = strlen(argv[1]);
   
   /* gen key and iv. init the cipher ctx object */
-  if (aes_init(key_data, key_data_len, (unsigned char *)&salt, &en, &de)) {
+  if (aes_init(key_data, key_data_len, (unsigned char *)&salt, en, de)) {
     printf("Couldn't initialize AES cipher\n");
     return -1;
   }
@@ -122,8 +123,8 @@ int main(int argc, char **argv)
        we end up with a legal C string */
     olen = len = strlen(input[i])+1;
     
-    ciphertext = aes_encrypt(&en, (unsigned char *)input[i], &len);
-    plaintext = (char *)aes_decrypt(&de, ciphertext, &len);
+    ciphertext = aes_encrypt(en, (unsigned char *)input[i], &len);
+    plaintext = (char *)aes_decrypt(de, ciphertext, &len);
 
     if (strncmp(plaintext, input[i], olen)) 
       printf("FAIL: enc/dec failed for \"%s\"\n", input[i]);
