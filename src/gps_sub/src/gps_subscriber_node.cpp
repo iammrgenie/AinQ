@@ -53,9 +53,6 @@ int main(int argc, char * argv[])
 {
   struct sockaddr_in N_addr;
 
-  ssize_t numRead;
-  //char buf[BUF_SIZE];
-
   // Create a new client socket with domain: AF_UNIX, type: SOCK_STREAM, protocol: 0
   if((node_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
     perror("Socket Failed");
