@@ -262,6 +262,7 @@ void GPS_connect(int TL_address){
 
 		for (int z = 0; z < 10; z++){
 			numRead = read(nw_sock, coord, 9);
+			coord[9] = '\0';
 	    	printf("Received Latitude = %s\n", coord);
 
 			unsigned char *plaintext = (unsigned char *)"615034071";
