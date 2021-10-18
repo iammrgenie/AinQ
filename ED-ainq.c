@@ -439,13 +439,11 @@ int main(int argc, char *argv[])
 
 		for (int z = 0; z < 10; z++){
 			unsigned char *plaintext = (unsigned char *)"133337777";
+			printf("Size of plaintext = %d\n", strlen((char *)plaintext));
 			int cipher_len;
 			cipher_len = encryptAES(plaintext, strlen((char *)plaintext), (unsigned char *)key_bytes, iv, ciphertext);
-			/* Do something useful with the ciphertext here */
-		    printf("Plaintext is: %s\n", plaintext);
 		    //send the ciphertext
 		    write(socket_desc, (char *)ciphertext, cipher_len);
-	    	//memset(coord, 0, 16);
 	    }
 
 
