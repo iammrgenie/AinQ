@@ -601,7 +601,7 @@ int main(int argc, char *argv[])
                 }     
             }
 
-            unsigned char plaintext[128];
+            unsigned char plaintext[9];
             unsigned char *iv = (unsigned char *)"5555500000111118";
 
             for (int z = 0; z < 10; z++){
