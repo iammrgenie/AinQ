@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <openssl/evp.h>
 #include <openssl/aes.h>
+#include <openssl/err.h>
 
 /**
  * Create a 256 bit key and IV using the supplied key_data. salt can be added for taste.
@@ -89,6 +90,7 @@ int main(int argc, char **argv)
      status of enc/dec operations */
   EVP_CIPHER_CTX *en;
   EVP_CIPHER_CTX *de;
+
   en = EVP_CIPHER_CTX_new();
   de = EVP_CIPHER_CTX_new();
 
@@ -137,8 +139,8 @@ int main(int argc, char **argv)
     free(plaintext);
   }
 
-  EVP_CIPHER_CTX_cleanup(en);
-  EVP_CIPHER_CTX_cleanup(de);
+  EVP_CIPHER_CTX_free(en);
+  EVP_CIPHER_CTX_free(de);
 
   return 0;
 }
