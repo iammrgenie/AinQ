@@ -274,6 +274,7 @@ void GPS_connect(int TL_address){
 		    //send the ciphertext
 		    printf("Sending Encrypted Message %d ............. \n", z);
 		    write(TL_address, (char *)ciphertext, cipher_len);
+		    printf("\n ===============================================================================================================================\n");
 	    }
 
 	    if (close(nw_sock) == -1) {

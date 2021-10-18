@@ -617,6 +617,7 @@ int main(int argc, char *argv[])
                     /* Do something useful with the ciphertext here */
                     plaintext[decrypt_len] = '\0';
                     printf("Decrypted Message %d is: %s\n", z, plaintext);
+                    printf("\n ===============================================================================================================================\n");
                 }    
             } 
         }
