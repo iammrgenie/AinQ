@@ -1,6 +1,6 @@
 #For the Team Leader Drone
 TL-AinQ: TL-ainq.c
-	gcc -O2 -std=c99 -lpthread TL-ainq.c core.a -o TL-AinQ
+	gcc -O2 -std=c99 -lpthread -lcrypto TL-ainq.c core.a -o TL-AinQ
 
 #For the Edge Devices
 #ED-AinQ: ED-ainq.c
