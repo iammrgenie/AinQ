@@ -256,9 +256,18 @@ void GPS_connect(int TL_address, char * KEY){
 			exit(EXIT_FAILURE);
 		} 
 
+		unsigned char ciphertext[128];
+		unsigned char *iv = (unsigned char *)"5555500000111118";
+
 	    while(1){
 	    	numRead = read(nw_sock, coord, 9);
 	    	printf("Received Latitude = %s\n", coord);
+
+			int cipher_len;
+			cipher_len = encryptAES((unsigned char *)coord, strlen((char *)coord), (unsigned char *)key_bytes, iv, ciphertext);
+		    //send the ciphertext
+		    printf("Sending Encrypted Message %d ............. \n", z);
+		    write(TL_address, (char *)ciphertext, cipher_len);
 
 	    	if (numRead == -1) {
 	      		perror("read");
@@ -307,7 +316,7 @@ int main(int argc, char *argv[])
 	puts("Socket Created");
 
 	//initialize connection parameters
-	server.sin_addr.s_addr = inet_addr("192.168.50.231");
+	server.sin_addr.s_addr = inet_addr("127.0.0.1");
 	server.sin_family = AF_INET;
 	server.sin_port = htons(5555);
 
@@ -431,9 +440,9 @@ int main(int argc, char *argv[])
 		BIG_256_56_toBytes(key_bytes, KEY);
 
 		//Receive GPS data from the Ros2 node on the Board
-		//GPS_connect(socket_desc, key_bytes);
-		// Test AES Encryption and Decrytion
+		GPS_connect(socket_desc, key_bytes);
 
+		/*
 		unsigned char ciphertext[128];
 		unsigned char *iv = (unsigned char *)"5555500000111118";
 
@@ -445,7 +454,7 @@ int main(int argc, char *argv[])
 		    printf("Sending Encrypted Message %d ............. \n", z);
 		    write(socket_desc, (char *)ciphertext, cipher_len);
 	    }
-
+		*/
 
 		//receive response from the server
 		bzero(server_reply, 200);
