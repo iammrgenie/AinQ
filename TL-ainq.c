@@ -541,9 +541,9 @@ int main(int argc, char *argv[])
 
             //Generate partial private and public key for the user
             gen_partial_key(&RNG, &P_I, &R_I, &X, &S_I, clientID);
-            printf("User %s's Partial Private Key = ", clientID);
+            printf("User %c's Partial Private Key = ", clientID);
             OCT_output(&S_I);
-            printf("User %s's Partial Public Key = ", clientID);
+            printf("User %c's Partial Public Key = ", clientID);
             OCT_output(&R_I);
             printf("===============================================================================================================================\n");
             printf("\n");
@@ -578,9 +578,9 @@ int main(int argc, char *argv[])
             printf("Number of Users in the Group %d\n\n", cnt);
             
             for (i = 0; i < cnt; i++){
-                printf("User %s's P_I = ", GL[i].ID_I);
+                printf("User %c's P_I = ", GL[i].ID_I);
                 ECP_ED25519_output(GL[i].P_I);
-                printf("User %s's R_I = ", GL[i].ID_I);
+                printf("User %c's R_I = ", GL[i].ID_I);
                 ECP_ED25519_output(GL[i].R_I);
                 printf("\n\n");
             }
@@ -593,7 +593,7 @@ int main(int argc, char *argv[])
 
                 for (i = 0; i < max_clients; i++){
                     if(client_socket[i] != 0){
-                        printf("Sending User %s's Ciphertext\n", GL[i].ID_I);
+                        printf("Sending User %c's Ciphertext\n", GL[i].ID_I);
                         write(client_socket[i], GL[i].c, 32);
                         write(client_socket[i], V.val, V.len);
                         //break;
