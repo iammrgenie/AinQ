@@ -35,7 +35,7 @@ octet V = {0, sizeof(pubvalue), pubvalue};
 
 //Definition of a user in AinQ
 typedef struct {
-    char ID_I[1];
+    char *ID_I;
     ECP_ED25519 *P_I;
     ECP_ED25519 *R_I;
     BIG_256_56 C_I;
@@ -527,7 +527,7 @@ int main(int argc, char *argv[])
             //Receive Partial Key Generation Parameters
             char p_i[2 * EFS_ED25519 + 1], r_i[2 * EFS_ED25519 + 1];
             char s_i[2 * EGS_ED25519];
-            char clientID[1];
+            char clientID[5];
             octet P_I = {0, sizeof(p_i), p_i};
             octet R_I = {0, sizeof(r_i), r_i};
             octet S_I = {0, sizeof(s_i), s_i};
@@ -541,9 +541,9 @@ int main(int argc, char *argv[])
 
             //Generate partial private and public key for the user
             gen_partial_key(&RNG, &P_I, &R_I, &X, &S_I, clientID);
-            printf("User %c's Partial Private Key = ", clientID);
+            printf("User %s's Partial Private Key = ", clientID);
             OCT_output(&S_I);
-            printf("User %c's Partial Public Key = ", clientID);
+            printf("User %s's Partial Public Key = ", clientID);
             OCT_output(&R_I);
             printf("===============================================================================================================================\n");
             printf("\n");
@@ -562,7 +562,7 @@ int main(int argc, char *argv[])
                     ECP_ED25519_fromOctet(&r_val, &R_I);
 
                     //Store Values in the Struct of Arrays for later use
-                    //GL[i].ID_I = (char *)malloc(1); //The ID
+                    GL[i].ID_I = (char *)malloc(strlen(clientID)); //The ID of the user
                     strcpy(GL[i].ID_I, clientID);
                     GL[i].P_I = malloc(sizeof(p_val));  //Partial Public Key from the User
                     ECP_ED25519_copy(GL[i].P_I, &p_val);
@@ -578,9 +578,9 @@ int main(int argc, char *argv[])
             printf("Number of Users in the Group %d\n\n", cnt);
             
             for (i = 0; i < cnt; i++){
-                printf("User %c's P_I = ", GL[i].ID_I);
+                printf("User %s's P_I = ", GL[i].ID_I);
                 ECP_ED25519_output(GL[i].P_I);
-                printf("User %c's R_I = ", GL[i].ID_I);
+                printf("User %s's R_I = ", GL[i].ID_I);
                 ECP_ED25519_output(GL[i].R_I);
                 printf("\n\n");
             }
@@ -593,7 +593,7 @@ int main(int argc, char *argv[])
 
                 for (i = 0; i < max_clients; i++){
                     if(client_socket[i] != 0){
-                        printf("Sending User %c's Ciphertext\n", GL[i].ID_I);
+                        printf("Sending User %s's Ciphertext\n", GL[i].ID_I);
                         write(client_socket[i], GL[i].c, 32);
                         write(client_socket[i], V.val, V.len);
                         //break;
