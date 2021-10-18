@@ -609,9 +609,11 @@ int main(int argc, char *argv[])
                 unsigned char ciphertext[128];
 
                 recv(new_socket, (char *)ciphertext, 16, 0);
+                printf("Received Ciphertext is:\n");
+                BIO_dump_fp (stdout, (const char *)ciphertext, 16);
                 decrypt_len = decryptAES(ciphertext, 16, (unsigned char *)GRP_KEY, iv, plaintext);
                 /* Do something useful with the ciphertext here */
-                printf("Decrypted Message is: %s\n", ciphertext);
+                printf("Decrypted Message is: %s\n", plaintext);
                 
                 //memset(coord, 0, 16);
         }
