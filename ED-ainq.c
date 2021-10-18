@@ -265,7 +265,8 @@ void GPS_connect(int TL_address){
 			coord[9] = '\0';
 	    	printf("Received Latitude = %s\n", coord);
 
-			unsigned char *plaintext = (unsigned char *)"615034071";
+			//unsigned char *plaintext = (unsigned char *)"615034071";
+			unsigned char *plaintext = (unsigned char *)coord;
 			int cipher_len;
 			cipher_len = encryptAES(plaintext, strlen((char *)plaintext), (unsigned char *)key_bytes, iv, ciphertext);
 		    //send the ciphertext

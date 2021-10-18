@@ -598,24 +598,23 @@ int main(int argc, char *argv[])
                         write(client_socket[i], V.val, V.len);
                         //break;
                     }  
-                }     
-            }
+                } 
 
-            unsigned char *iv = (unsigned char *)"5555500000111118";
+                unsigned char *iv = (unsigned char *)"5555500000111118";
+                printf("\nWaiting for Encrypted Communication ..... \n");
 
-            for (int z = 0; z < 10; z++){
-                int decrypt_len;
-                unsigned char plaintext[128];
-                unsigned char ciphertext[128];
+                for (int z = 0; z < 10; z++){
+                    int decrypt_len;
+                    unsigned char plaintext[128];
+                    unsigned char ciphertext[128];
 
-                recv(new_socket, (char *)ciphertext, 16, 0);
-                decrypt_len = decryptAES(ciphertext, 16, (unsigned char *)GRP_KEY, iv, plaintext);
-                /* Do something useful with the ciphertext here */
-                plaintext[decrypt_len] = '\0';
-                printf("Decrypted Message is: %s\n", plaintext);
-        }
-           
-
+                    recv(new_socket, (char *)ciphertext, 16, 0);
+                    decrypt_len = decryptAES(ciphertext, 16, (unsigned char *)GRP_KEY, iv, plaintext);
+                    /* Do something useful with the ciphertext here */
+                    plaintext[decrypt_len] = '\0';
+                    printf("Decrypted Message %d is: %s\n", z, plaintext);
+                }    
+            } 
         }
 
         for (i = 0; i < max_clients; i++){
