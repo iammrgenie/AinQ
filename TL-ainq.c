@@ -601,19 +601,18 @@ int main(int argc, char *argv[])
                 }     
             }
 
-            unsigned char plaintext[9];
             unsigned char *iv = (unsigned char *)"5555500000111118";
 
             for (int z = 0; z < 10; z++){
                 int decrypt_len;
+                unsigned char plaintext[128];
                 unsigned char ciphertext[128];
 
                 recv(new_socket, (char *)ciphertext, 16, 0);
                 decrypt_len = decryptAES(ciphertext, 16, (unsigned char *)GRP_KEY, iv, plaintext);
                 /* Do something useful with the ciphertext here */
+                plaintext[decrypt_len] = '\0';
                 printf("Decrypted Message is: %s\n", plaintext);
-                
-                //memset(coord, 0, 16);
         }
            
 
