@@ -250,7 +250,7 @@ void GPS_connect(int TL_address){
 	ssize_t numRead;
 
 	for (;;) {          /* Handle client connections iteratively */
-	    printf("Waiting for GPS Data Connection...\n");
+	    printf("Waiting for GPS Coordinates...\n");
 	    // NOTE: blocks until a connection request arrives.
 	    if((nw_sock = accept(ser_addr, (struct sockaddr *)&CL_addr, (socklen_t *)&add_len)) < 0){
 			perror("Accept Failed");
@@ -269,35 +269,12 @@ void GPS_connect(int TL_address){
 			unsigned char *plaintext = (unsigned char *)coord;
 			int cipher_len;
 			cipher_len = encryptAES(plaintext, strlen((char *)plaintext), (unsigned char *)key_bytes, iv, ciphertext);
+			printf("Encrypted Message %d :\n", z);
+    		BIO_dump_fp (stdout, (const char *)ciphertext, ciphertext_len);
 		    //send the ciphertext
 		    printf("Sending Encrypted Message %d ............. \n", z);
 		    write(TL_address, (char *)ciphertext, cipher_len);
 	    }
-
-	    /*
-		unsigned char ciphertext[128];
-		unsigned char *iv = (unsigned char *)"5555500000111118";
-
-	    for (int z = 0; z < 10; z++) {
-	    	numRead = read(nw_sock, coord, 9);
-	    	printf("Received Latitude = %s\n", coord);
-
-			int cipher_len;
-			unsigned char *plaintext = (unsigned char *)coord;
-			printf("Converted Text = %s\n", plaintext);
-			cipher_len = encryptAES(plaintext, strlen((char *)plaintext), (unsigned char *)key_bytes, iv, ciphertext);
-		    //send the ciphertext
-		    printf("Sending Encrypted Message %d ............. \n", z);
-		    //write(TL_address, (char *)ciphertext, cipher_len);
-
-	    	if (numRead == -1) {
-	      		perror("read");
-	      		exit(EXIT_FAILURE);
-	    	}
-
-		    //write(TL_address, cipher, strlen(cipher));
-	    }
-	    */
 
 	    if (close(nw_sock) == -1) {
 	      perror("close");
@@ -460,20 +437,6 @@ int main(int argc, char *argv[])
 
 		//Receive GPS data from the Ros2 node on the Board
 		GPS_connect(socket_desc);
-
-		/*
-		unsigned char ciphertext[128];
-		unsigned char *iv = (unsigned char *)"5555500000111118";
-
-		for (int z = 0; z < 10; z++){
-			unsigned char *plaintext = (unsigned char *)"133337777";
-			int cipher_len;
-			cipher_len = encryptAES(plaintext, strlen((char *)plaintext), (unsigned char *)key_bytes, iv, ciphertext);
-		    //send the ciphertext
-		    printf("Sending Encrypted Message %d ............. \n", z);
-		    write(socket_desc, (char *)ciphertext, cipher_len);
-	    }
-		*/
 
 		//receive response from the server
 		bzero(server_reply, 200);
