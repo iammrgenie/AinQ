@@ -264,7 +264,8 @@ void GPS_connect(int TL_address, char * KEY){
 	    	printf("Received Latitude = %s\n", coord);
 
 			int cipher_len;
-			//unsigned char *plaintext = (unsigned char *)coord;
+			unsigned char *plaintext = (unsigned char *)coord;
+			printf("Converted Text = %s\n", plaintext);
 			//cipher_len = encryptAES(plaintext, strlen((char *)coord), (unsigned char *)KEY, iv, ciphertext);
 		    //send the ciphertext
 		    //printf("Sending Encrypted Message %d ............. \n", z);
