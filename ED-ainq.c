@@ -26,6 +26,7 @@
 //ED25519 curve parameters
 BIG_256_56 q;
 ECP_ED25519 P;
+char *key_bytes;
 
 char p_param[2 * EGS_ED25519 +1];
 octet P_PARAM = {0, sizeof(p_param), p_param};
@@ -213,7 +214,7 @@ void displayString(char *sample, int len){
 }
 
 //Function to receive GPS data from the ROS2 node
-void GPS_connect(int TL_address, char * KEY){
+void GPS_connect(int TL_address){
 	struct sockaddr_in CL_addr;
 	int ser_addr, nw_sock;
 	int opt = 1;
@@ -266,7 +267,7 @@ void GPS_connect(int TL_address, char * KEY){
 			int cipher_len;
 			unsigned char *plaintext = (unsigned char *)coord;
 			printf("Converted Text = %s\n", plaintext);
-			cipher_len = encryptAES(plaintext, strlen((char *)coord), (unsigned char *)KEY, iv, ciphertext);
+			cipher_len = encryptAES(plaintext, strlen((char *)plaintext), (unsigned char *)key_bytes, iv, ciphertext);
 		    //send the ciphertext
 		    printf("Sending Encrypted Message %d ............. \n", z);
 		    //write(TL_address, (char *)ciphertext, cipher_len);
@@ -368,8 +369,6 @@ int main(int argc, char *argv[])
     octet R_I = {0, sizeof(r_i), r_i};
 
     BIG_256_56 x_val, s_val, KEY;
-    char *key_bytes;
-    key_bytes = malloc(sizeof(KEY));
 
     //Random number generator parameters
     char raw[100];
@@ -439,10 +438,11 @@ int main(int argc, char *argv[])
 
 		//Retrieve the Generated Key
 		keyretrieval(s_val, x_val, C_I, &P_I, &R_I, &ID, KEY);
+    	key_bytes = malloc(sizeof(KEY));
 		BIG_256_56_toBytes(key_bytes, KEY);
 
 		//Receive GPS data from the Ros2 node on the Board
-		GPS_connect(socket_desc, key_bytes);
+		GPS_connect(socket_desc);
 
 		/*
 		unsigned char ciphertext[128];
