@@ -615,8 +615,8 @@ int main(int argc, char *argv[])
                 int decrypt_len;
                 unsigned char ciphertext[128];
 
-                recv(new_socket, (char *)ciphertext, 128, 0);
-                decrypt_len = decryptAES(ciphertext, 5, (unsigned char *)GRP_KEY, iv, plaintext);
+                recv(new_socket, (char *)ciphertext, 16, 0);
+                decrypt_len = decryptAES(ciphertext, 16, (unsigned char *)GRP_KEY, iv, plaintext);
                 /* Do something useful with the ciphertext here */
                 printf("Decrypted Message is: %s\n", ciphertext);
                 

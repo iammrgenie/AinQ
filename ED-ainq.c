@@ -264,7 +264,7 @@ void GPS_connect(int TL_address, char * KEY){
 	      		perror("read");
 	      		exit(EXIT_FAILURE);
 	    	}
-	    	
+
 		    //write(TL_address, cipher, strlen(cipher));
 
 	    	//memset(coord, 0, 16);
@@ -446,7 +446,7 @@ int main(int argc, char *argv[])
 		    printf("Ciphertext is:\n");
 		    BIO_dump_fp (stdout, (const char *)ciphertext, cipher_len);
 		    //send the ciphertext
-		    write(socket_desc, (char *)ciphertext, 128);
+		    write(socket_desc, (char *)ciphertext, cipher_len);
 	    	//memset(coord, 0, 16);
 	    }
 
