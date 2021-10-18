@@ -35,7 +35,7 @@ octet V = {0, sizeof(pubvalue), pubvalue};
 
 //Definition of a user in AinQ
 typedef struct {
-    char *ID_I;
+    char ID_I[1];
     ECP_ED25519 *P_I;
     ECP_ED25519 *R_I;
     BIG_256_56 C_I;
@@ -303,9 +303,6 @@ int gengroupkey(GL_user * GL, csprng *RNG, octet * P_PUB, int cnt)
         //Compute T_A
         ECP_ED25519_mul(&TP_PUB, l_k);
         ECP_ED25519_toOctet(&T_I, &TP_PUB, false);
-        //printf("T_I: ");
-        //OCT_output(&T_I);
-        //printf("\n"); 
 
         //Final Hash variables
         char kk[65*4 + 1];
@@ -325,9 +322,6 @@ int gengroupkey(GL_user * GL, csprng *RNG, octet * P_PUB, int cnt)
 
         //Perform the hashing using SHA256
         SPhash(MC_SHA2, SHA256, &KMSG, &KK);
-        //printf("XOR Hash Digest: ");
-        //OCT_output(&KMSG);
-        //printf("\n");
 
         //Compute XOR to generate Ciphertext
         BIG_256_56 h_val, c_i;
@@ -344,7 +338,6 @@ int gengroupkey(GL_user * GL, csprng *RNG, octet * P_PUB, int cnt)
         
         GL[i].c = malloc(sizeof(c_i));
         BIG_256_56_toBytes(GL[i].c, c_i);       //Convert Ciphertext to Byte for Sending
-        //GL[i].C_I = c_i;
     }
 
     return 0;
@@ -540,7 +533,7 @@ int main(int argc, char *argv[])
             octet S_I = {0, sizeof(s_i), s_i};
             
             recv(new_socket, clientID, 1, 0);
-            printf("\nUser %c's Public Key = ", clientID);
+            printf("\nUser %s's Public Key = ", clientID);
 
             recv(new_socket, p_i, sizeof(p_i), 0);
             OCT_jbytes(&P_I, p_i, sizeof(p_i));
@@ -569,7 +562,7 @@ int main(int argc, char *argv[])
                     ECP_ED25519_fromOctet(&r_val, &R_I);
 
                     //Store Values in the Struct of Arrays for later use
-                    GL[i].ID_I = (char *)malloc(1); //The ID
+                    //GL[i].ID_I = (char *)malloc(1); //The ID
                     strcpy(GL[i].ID_I, clientID);
                     GL[i].P_I = malloc(sizeof(p_val));  //Partial Public Key from the User
                     ECP_ED25519_copy(GL[i].P_I, &p_val);
