@@ -18,7 +18,6 @@
 #include "ecdh_ED25519.h"
 #include "randapi.h"
 
-#include "aes.h"
 
 //IPC socket parameters
 #define BUF_SIZE 10
