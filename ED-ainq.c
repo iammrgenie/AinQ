@@ -219,8 +219,6 @@ void GPS_connect(int TL_address, char * KEY){
 	int opt = 1;
 	int add_len = sizeof(CL_addr);
 
-	struct AES_ctx ctx;
-	AES_init_ctx(&ctx, (uint8_t*)KEY);
 
 	if((ser_addr = socket(AF_INET, SOCK_STREAM, 0)) == 0){
 		perror("Socket Failed");
@@ -266,10 +264,7 @@ void GPS_connect(int TL_address, char * KEY){
 	      		perror("read");
 	      		exit(EXIT_FAILURE);
 	    	}
-
-	    	AES_ECB_encrypt(&ctx, (uint8_t*)coord);
-		    printf("Encrypted Value = ");
-		    displayString((char*)coord, 16);
+	    	
 		    //write(TL_address, cipher, strlen(cipher));
 
 	    	//memset(coord, 0, 16);
