@@ -444,13 +444,13 @@ int main(int argc, char *argv[])
 		unsigned char *iv = (unsigned char *)"5555500000111118";
 
 		for (int z = 0; z < 10; z++){
-			unsigned *plaintext = (unsigned char *)"133337777"
+			unsigned *plaintext = (unsigned char *)"133337777";
 			int cipher_len;
 			cipher_len = encryptAES(plaintext, strlen((char *)plaintext), (unsigned char *)key_bytes, iv, ciphertext);
 			printf("Cipher Length is %d \n", cipher_len);
 			/* Do something useful with the ciphertext here */
 		    printf("Ciphertext is:\n");
-		    BIO_dump_fp (stdout, (const char *)ciphertext, ciphertext_len);
+		    BIO_dump_fp (stdout, (const char *)ciphertext, cipher_len);
 		    //send the ciphertext
 		    write(socket_desc, (char *)ciphertext, 128);
 	    	//memset(coord, 0, 16);
