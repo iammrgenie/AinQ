@@ -569,7 +569,7 @@ int main(int argc, char *argv[])
                     ECP_ED25519_fromOctet(&r_val, &R_I);
 
                     //Store Values in the Struct of Arrays for later use
-                    GL[i].ID_I = (char *)malloc(strlen(clientID)); //The ID
+                    GL[i].ID_I = (char *)malloc(1); //The ID
                     strcpy(GL[i].ID_I, clientID);
                     GL[i].P_I = malloc(sizeof(p_val));  //Partial Public Key from the User
                     ECP_ED25519_copy(GL[i].P_I, &p_val);
