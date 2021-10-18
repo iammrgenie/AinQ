@@ -15,6 +15,10 @@
 #include "ecdh_ED25519.h"
 #include "randapi.h"
 
+#include <openssl/conf.h>       //Openssl headers for AES
+#include <openssl/evp.h>
+#include <openssl/err.h>
+
 
 #define TRUE 1
 #define FALSE 0
@@ -23,6 +27,7 @@
 //ED25519 curve parameters
 BIG_256_56 q;
 ECP_ED25519 P;
+char *GRP_KEY;
 
 //V parameters
 char pubvalue[2 * EFS_ED25519 + 1];
@@ -38,6 +43,63 @@ typedef struct {
 } GL_user;
 
 GL_user GL[500];
+
+//Error handling for AES
+void handleErrors(void)
+{
+    ERR_print_errors_fp(stderr);
+    abort();
+}
+
+//AES Encryption Function
+int encryptAES(unsigned char *plaintext, int plaintext_len, unsigned char *key, unsigned char *iv, unsigned char *ciphertext)
+{
+    EVP_CIPHER_CTX *ctx;
+    int len;
+    int ciphertext_len;
+
+    if(!(ctx = EVP_CIPHER_CTX_new()))
+        handleErrors();
+
+    if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
+        handleErrors();
+
+    if(1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len))
+        handleErrors();
+    ciphertext_len = len;
+
+    if(1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len))
+        handleErrors();
+    ciphertext_len += len;
+
+    EVP_CIPHER_CTX_free(ctx);
+    return ciphertext_len;
+}
+
+//AES Decryption Function
+int decryptAES(unsigned char *ciphertext, int ciphertext_len, unsigned char *key, unsigned char *iv, unsigned char *plaintext)
+{
+    EVP_CIPHER_CTX *ctx;
+    int len;
+    int plaintext_len;
+
+    if(!(ctx = EVP_CIPHER_CTX_new()))
+        handleErrors();
+
+    if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
+        handleErrors();
+
+    if(1 != EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len))
+        handleErrors();
+    plaintext_len = len;
+
+    if(1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len))
+        handleErrors();
+    plaintext_len += len;
+
+    EVP_CIPHER_CTX_free(ctx);
+    return plaintext_len;
+}
 
 //Function to Generate Initial Secret and Public Key pairs
 int gen_secret_value(csprng *RNG, octet *SECRET_VALUE, octet *PUBLIC_VALUE) 
@@ -166,6 +228,9 @@ int gengroupkey(GL_user * GL, csprng *RNG, octet * P_PUB, int cnt)
     printf("Group Key Generated: ");
     BIG_256_56_output(k_g);
     printf("\n\n");
+
+    GRP_KEY = malloc(sizeof(k_g));
+    BIG_256_56_toBytes(GRP_KEY, k_g);
     
     //copy l_k into L
     BIG_256_56_toBytes(L.val, l_k);
@@ -540,25 +605,25 @@ int main(int argc, char *argv[])
                         write(client_socket[i], V.val, V.len);
                         //break;
                     }  
-                }
+                }     
+            }
 
+            unsigned char plaintext[128];
+            unsigned char *iv = (unsigned char *)"5555500000111118";
 
+            for (int z = 0; z < 10; z++){
+                int decrypt_len;
+                unsigned char ciphertext[128];
+
+                recv(new_socket, (char *)ciphertext, 128, 0);
+                decrypt_len = decryptAES(ciphertext, 5, (unsigned char *)GRP_KEY, iv, plaintext);
+                /* Do something useful with the ciphertext here */
+                printf("Decrypted Message is: %s\n", ciphertext);
                 
-            }
-            /*
-            //Sending Ciphertext back to the User
-            for (i = 0; i < max_clients; i++){
-                if(client_socket[i] != 0 && cnt == 3){
-                    //Generating a Group Key for the Group
-                    printf("\nGenerating Group Key for the Group\n");
-                    gengroupkey(GL, &RNG, &P_PUB, cnt);
-                    printf("Sending User %s's Ciphertext\n", GL[i].ID_I);
-                    write(client_socket[i], GL[i].c, 32);
-                    write(client_socket[i], V.val, V.len);
-                    //break;
-                }  
-            }
-            */
+                //memset(coord, 0, 16);
+        }
+           
+
         }
 
         for (i = 0; i < max_clients; i++){

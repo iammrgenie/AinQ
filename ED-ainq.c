@@ -9,6 +9,10 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include <openssl/conf.h>		//Openssl headers for AES
+#include <openssl/evp.h>
+#include <openssl/err.h>
+
 //Crypto headers
 #include <time.h>
 #include "ecdh_ED25519.h"
@@ -35,6 +39,62 @@ octet V = {0, sizeof(pubvalue), pubvalue};
 char ppub[2 * EFS_ED25519 + 1];
 octet P_PUB = {0, sizeof(ppub), ppub};
 
+//Error handling for AES
+void handleErrors(void)
+{
+    ERR_print_errors_fp(stderr);
+    abort();
+}
+
+//AES Encryption Function
+int encryptAES(unsigned char *plaintext, int plaintext_len, unsigned char *key, unsigned char *iv, unsigned char *ciphertext)
+{
+    EVP_CIPHER_CTX *ctx;
+	int len;
+	int ciphertext_len;
+
+    if(!(ctx = EVP_CIPHER_CTX_new()))
+        handleErrors();
+
+    if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
+        handleErrors();
+
+    if(1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len))
+        handleErrors();
+    ciphertext_len = len;
+
+    if(1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len))
+        handleErrors();
+    ciphertext_len += len;
+
+    EVP_CIPHER_CTX_free(ctx);
+	return ciphertext_len;
+}
+
+//AES Decryption Function
+int decryptAES(unsigned char *ciphertext, int ciphertext_len, unsigned char *key, unsigned char *iv, unsigned char *plaintext)
+{
+    EVP_CIPHER_CTX *ctx;
+    int len;
+    int plaintext_len;
+
+    if(!(ctx = EVP_CIPHER_CTX_new()))
+        handleErrors();
+
+    if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
+        handleErrors();
+
+    if(1 != EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len))
+        handleErrors();
+    plaintext_len = len;
+
+    if(1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len))
+        handleErrors();
+    plaintext_len += len;
+
+    EVP_CIPHER_CTX_free(ctx);
+	return plaintext_len;
+}
 
 //Function to Generate Initial Secret and Public Key pairs
 int gen_secret_value(csprng *RNG, octet *SECRET_VALUE, octet *PUBLIC_VALUE) 
@@ -216,22 +276,6 @@ void GPS_connect(int TL_address, char * KEY){
 	    	//memset(coord, 0, 16);
 	    }
 
-	    /*
-	    // Read at most BUF_SIZE bytes from the socket into buf.
-	    while ((numRead = read(nw_sock, buf, BUF_SIZE)) > 0) {
-	      // Then, write those bytes from buf into STDOUT
-	      if (write(STDOUT_FILENO, buf, numRead) != numRead) {
-	        perror("partial/failed write");
-	      }
-	      printf("\n");
-	      
-	    }
-
-	    if (numRead == -1) {
-	      perror("read");
-	    }
-	    */
-
 	    if (close(nw_sock) == -1) {
 	      perror("close");
     	}
@@ -269,7 +313,7 @@ int main(int argc, char *argv[])
 	puts("Socket Created");
 
 	//initialize connection parameters
-	server.sin_addr.s_addr = inet_addr("172.18.32.132");
+	server.sin_addr.s_addr = inet_addr("192.168.50.231");
 	server.sin_family = AF_INET;
 	server.sin_port = htons(5555);
 
@@ -393,7 +437,24 @@ int main(int argc, char *argv[])
 		BIG_256_56_toBytes(key_bytes, KEY);
 
 		//Receive GPS data from the Ros2 node on the Board
-		GPS_connect(socket_desc, key_bytes);
+		//GPS_connect(socket_desc, key_bytes);
+		// Test AES Encryption and Decrytion
+
+		unsigned char ciphertext[128];
+		unsigned char *iv = (unsigned char *)"5555500000111118";
+
+		for (int z = 0; z < 10; z++){
+			unsigned *plaintext = (unsigned char *)"133337777"
+			int cipher_len;
+			cipher_len = encryptAES(plaintext, strlen((char *)plaintext), (unsigned char *)key_bytes, iv, ciphertext);
+			printf("Cipher Length is %d \n", cipher_len);
+			/* Do something useful with the ciphertext here */
+		    printf("Ciphertext is:\n");
+		    BIO_dump_fp (stdout, (const char *)ciphertext, ciphertext_len);
+		    //send the ciphertext
+		    write(socket_desc, (char *)ciphertext, 128);
+	    	//memset(coord, 0, 16);
+	    }
 
 
 		//receive response from the server
