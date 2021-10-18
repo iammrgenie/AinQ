@@ -259,14 +259,15 @@ void GPS_connect(int TL_address, char * KEY){
 		unsigned char ciphertext[128];
 		unsigned char *iv = (unsigned char *)"5555500000111118";
 
-	    while(1){
+	    for (int z = 0; z < 10; z++) {
 	    	numRead = read(nw_sock, coord, 9);
 	    	printf("Received Latitude = %s\n", coord);
 
 			int cipher_len;
-			cipher_len = encryptAES((unsigned char *)coord, strlen((char *)coord), (unsigned char *)KEY, iv, ciphertext);
+			unsigned char *plaintext = (unsigned char *)coord;
+			cipher_len = encryptAES(plaintext, strlen((char *)coord), (unsigned char *)KEY, iv, ciphertext);
 		    //send the ciphertext
-		    printf("Sending Encrypted Message ............. \n");
+		    printf("Sending Encrypted Message %d ............. \n", z);
 		    write(TL_address, (char *)ciphertext, cipher_len);
 
 	    	if (numRead == -1) {
