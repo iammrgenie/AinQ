@@ -611,7 +611,7 @@ int main(int argc, char *argv[])
                     recv(new_socket, (char *)ciphertext, 16, 0);
 
                     printf("Encrypted Message %d is:\n", z);
-                    BIO_dump_fp (stdout, (const char *)ciphertext, ciphertext_len);
+                    BIO_dump_fp (stdout, (const char *)ciphertext, 16);
                     
                     decrypt_len = decryptAES(ciphertext, 16, (unsigned char *)GRP_KEY, iv, plaintext);
                     /* Do something useful with the ciphertext here */

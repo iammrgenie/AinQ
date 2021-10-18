@@ -270,7 +270,7 @@ void GPS_connect(int TL_address){
 			int cipher_len;
 			cipher_len = encryptAES(plaintext, strlen((char *)plaintext), (unsigned char *)key_bytes, iv, ciphertext);
 			printf("Encrypted Message %d :\n", z);
-    		BIO_dump_fp (stdout, (const char *)ciphertext, ciphertext_len);
+    		BIO_dump_fp (stdout, (const char *)ciphertext, cipher_len);
 		    //send the ciphertext
 		    printf("Sending Encrypted Message %d ............. \n", z);
 		    write(TL_address, (char *)ciphertext, cipher_len);
