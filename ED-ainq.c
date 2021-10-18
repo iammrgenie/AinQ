@@ -245,7 +245,7 @@ void GPS_connect(int TL_address, char * KEY){
 	    exit(EXIT_FAILURE);
 	}
 
-	char coord[16];
+	char coord[9];
 	ssize_t numRead;
 
 	for (;;) {          /* Handle client connections iteratively */
@@ -277,7 +277,7 @@ void GPS_connect(int TL_address, char * KEY){
 
 		    //write(TL_address, cipher, strlen(cipher));
 
-	    	//memset(coord, 0, 16);
+	    	memset(coord, 0, 9);
 	    }
 
 	    if (close(nw_sock) == -1) {
