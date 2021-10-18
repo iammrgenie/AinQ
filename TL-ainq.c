@@ -540,7 +540,7 @@ int main(int argc, char *argv[])
             octet S_I = {0, sizeof(s_i), s_i};
             
             recv(new_socket, clientID, 1, 0);
-            printf("\nUser %s's Public Key = ", clientID);
+            printf("\nUser %c's Public Key = ", clientID);
 
             recv(new_socket, p_i, sizeof(p_i), 0);
             OCT_jbytes(&P_I, p_i, sizeof(p_i));
