@@ -260,6 +260,22 @@ void GPS_connect(int TL_address){
 		unsigned char ciphertext[128];
 		unsigned char *iv = (unsigned char *)"5555500000111118";
 
+		for (int z = 0; z < 10; z++){
+			numRead = read(nw_sock, coord, 9);
+	    	printf("Received Latitude = %s\n", coord);
+
+			unsigned char *plaintext = (unsigned char *)"615034071";
+			int cipher_len;
+			cipher_len = encryptAES(plaintext, strlen((char *)plaintext), (unsigned char *)key_bytes, iv, ciphertext);
+		    //send the ciphertext
+		    printf("Sending Encrypted Message %d ............. \n", z);
+		    write(TL_address, (char *)ciphertext, cipher_len);
+	    }
+
+	    /*
+		unsigned char ciphertext[128];
+		unsigned char *iv = (unsigned char *)"5555500000111118";
+
 	    for (int z = 0; z < 10; z++) {
 	    	numRead = read(nw_sock, coord, 9);
 	    	printf("Received Latitude = %s\n", coord);
@@ -267,7 +283,7 @@ void GPS_connect(int TL_address){
 			int cipher_len;
 			unsigned char *plaintext = (unsigned char *)coord;
 			printf("Converted Text = %s\n", plaintext);
-			//cipher_len = encryptAES(plaintext, strlen((char *)plaintext), (unsigned char *)key_bytes, iv, ciphertext);
+			cipher_len = encryptAES(plaintext, strlen((char *)plaintext), (unsigned char *)key_bytes, iv, ciphertext);
 		    //send the ciphertext
 		    printf("Sending Encrypted Message %d ............. \n", z);
 		    //write(TL_address, (char *)ciphertext, cipher_len);
@@ -278,9 +294,8 @@ void GPS_connect(int TL_address){
 	    	}
 
 		    //write(TL_address, cipher, strlen(cipher));
-
-	    	memset(coord, 0, 9);
 	    }
+	    */
 
 	    if (close(nw_sock) == -1) {
 	      perror("close");
